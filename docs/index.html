@@ -1,0 +1,1011 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="GramIQ: een weegschaal onder elke groentebak. 3D-simulatie van een echte verkoopdag met een AI-bijvulplan.">
+<title>GramIQ Winkelsimulatie</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Opbouw: korte kop, dan de winkelvloer (canvas) naast het scherm van de winkel-PC; daaronder de vergelijking, de meting van één weegschaal en de werking in vier stappen. */
+:root {
+  --vloer: #F1F4EF; --paneel: #FFFFFF; --inkt: #14231C; --inkt-2: #586A60; --lijn: #D5DDD5; --tegel: #E6EBE4;
+  --signaal: #2F4BD8; --signaal-zacht: #E4E8FB;
+  --ok: #24804F; --waarschuwing: #B87400; --kritiek: #CC3B2A; --leeg: #8A1D12;
+  --p-broccoli: #4B963C; --p-lotus: #D9C39B; --p-aubergine: #6A3D85; --p-paprika: #86C440; --klant: #8A9A90;
+  --muur: #D3DCD3; --hout: #C9A878; --tafel: #A9B7AC; --vloer3d: #FBFCFA;
+  --kop: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --tekst: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --cijfer: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --vloer: #0F1512; --paneel: #171F1B; --inkt: #E7EDE8; --inkt-2: #98A69D; --lijn: #2B3731; --tegel: #151C18;
+  --signaal: #8198FF; --signaal-zacht: #1D2547;
+  --ok: #4DBE84; --waarschuwing: #EFB03C; --kritiek: #F37462; --leeg: #D2584A;
+  --p-broccoli: #5FAE4F; --p-lotus: #CDB68C; --p-aubergine: #9463B4; --p-paprika: #9BD455; --klant: #7C8B82;
+  --muur: #3A4A41; --hout: #A5875C; --tafel: #4C5E54; --vloer3d: #2A3731;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --vloer: #0F1512; --paneel: #171F1B; --inkt: #E7EDE8; --inkt-2: #98A69D; --lijn: #2B3731; --tegel: #151C18;
+  --signaal: #8198FF; --signaal-zacht: #1D2547;
+  --ok: #4DBE84; --waarschuwing: #EFB03C; --kritiek: #F37462; --leeg: #D2584A;
+  --p-broccoli: #5FAE4F; --p-lotus: #CDB68C; --p-aubergine: #9463B4; --p-paprika: #9BD455; --klant: #7C8B82;
+  --muur: #3A4A41; --hout: #A5875C; --tafel: #4C5E54; --vloer3d: #2A3731;
+  color-scheme: dark; }
+
+body { margin: 0; background: var(--vloer); color: var(--inkt); font-family: var(--tekst); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-block: 28px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 28px; }
+h1, h2, h3, p, ul, ol, dl, figure, table { margin: 0; }
+[hidden] { display: none !important; }
+.kop { display: flex; flex-direction: column; gap: 8px; }
+.merk { font-family: var(--cijfer); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--signaal); }
+h1 { font-family: var(--kop); font-weight: 700; font-size: clamp(30px, 5vw, 46px); line-height: 1.05; letter-spacing: -.015em; text-wrap: balance; }
+.intro { max-width: 64ch; color: var(--inkt-2); font-size: 16px; text-wrap: pretty; }
+h2 { font-family: var(--kop); font-weight: 700; font-size: 22px; line-height: 1.2; text-wrap: balance; }
+h3 { font-family: var(--tekst); font-weight: 600; font-size: 14px; }
+.uitleg { color: var(--inkt-2); max-width: 68ch; text-wrap: pretty; }
+.blok { display: flex; flex-direction: column; gap: 12px; }
+
+/* bediening */
+.bediening { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 10px 0; border-block: 1px solid var(--lijn); }
+.klok { font-family: var(--cijfer); font-weight: 500; font-size: 22px; font-variant-numeric: tabular-nums; min-width: 5ch; }
+.dag-naam { color: var(--inkt-2); font-size: 13px; }
+.knop { font: 500 14px var(--tekst); color: var(--paneel); background: var(--inkt); border: 1px solid var(--inkt); border-radius: 6px; padding: 7px 14px; cursor: pointer; min-width: 92px; }
+.knop.stil { background: transparent; color: var(--inkt); border-color: var(--lijn); min-width: 0; }
+.knop:hover { opacity: .88; }
+.knop:focus-visible, .kaart:focus-visible, select:focus-visible, .keuze input:focus-visible + label, summary:focus-visible { outline: 2px solid var(--signaal); outline-offset: 2px; }
+.veld { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--inkt-2); }
+select { font: 14px var(--tekst); color: var(--inkt); background: var(--paneel); border: 1px solid var(--lijn); border-radius: 6px; padding: 6px 8px; max-width: 100%; }
+.keuze { display: inline-flex; border: 1px solid var(--lijn); border-radius: 6px; padding: 0; margin: 0; overflow: hidden; background: var(--paneel); }
+.keuze legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.keuze input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.keuze label { padding: 6px 12px; font-size: 14px; cursor: pointer; color: var(--inkt-2); border-left: 1px solid var(--lijn); white-space: nowrap; }
+.keuze label:first-of-type { border-left: 0; }
+.keuze input:checked + label { background: var(--inkt); color: var(--paneel); }
+.keuze.wereld input:checked + label { background: var(--signaal); color: var(--paneel); }
+.duw { margin-left: auto; }
+
+/* toneel */
+.toneel { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 880px) { .toneel { grid-template-columns: minmax(0, 1fr); } }
+.vloer { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.vloer canvas, .grafiek canvas, .dagplan canvas { display: block; width: 100%; border-radius: 10px; background: var(--paneel); border: 1px solid var(--lijn); touch-action: manipulation; }
+#winkel { cursor: pointer; }
+.podium { position: relative; overflow: hidden; border-radius: 10px; }
+#winkel3d { cursor: grab; touch-action: pan-y; }
+#winkel3d:active { cursor: grabbing; }
+.labels { position: absolute; inset: 0; pointer-events: none; }
+.lab { position: absolute; left: 0; top: 0; transform: translate(-50%, -100%); white-space: nowrap; font-size: 11.5px; line-height: 1.25; padding: 2px 7px; border-radius: 5px; background: var(--paneel); border: 1px solid var(--lijn); color: var(--inkt-2); text-align: center; will-change: transform; }
+.lab b { display: block; color: var(--inkt); font-weight: 600; font-size: 12px; }
+.lab span { font-family: var(--cijfer); font-size: 11.5px; }
+.lab.gekozen { border-color: var(--signaal); box-shadow: 0 0 0 1px var(--signaal); }
+.lab.plek { background: none; border: 0; text-transform: uppercase; letter-spacing: .08em; font-size: 10.5px; font-family: var(--cijfer); }
+.hint { font-size: 12.5px; color: var(--inkt-2); }
+.plan { list-style: none; padding: 0; display: flex; flex-direction: column; min-height: 252px; }
+.plan li { display: grid; grid-template-columns: 5.2ch minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--lijn); }
+.plan time { font-family: var(--cijfer); font-weight: 500; font-size: 14px; font-variant-numeric: tabular-nums; }
+.plan .wat { display: flex; flex-direction: column; min-width: 0; }
+.plan .wat b { font-weight: 600; font-size: 14px; }
+.plan .wat small { color: var(--inkt-2); font-size: 12.5px; }
+.plan .chip { font-size: 11.5px; font-weight: 600; padding: 1px 8px; border-radius: 999px; border: 1.5px solid var(--lijn); color: var(--inkt-2); white-space: nowrap; }
+.plan li.nu { background: var(--signaal-zacht); margin: 0 -10px; padding: 9px 10px; border-radius: 8px; border-top-color: transparent; }
+.plan li.nu + li { border-top-color: transparent; }
+.plan li.nu .chip { border-color: var(--signaal); color: var(--signaal); }
+.plan li.geen { display: block; color: var(--inkt-2); }
+.plan-voet { font-size: 13px; color: var(--inkt-2); }
+.plan-voet b { color: var(--inkt); font-family: var(--cijfer); font-weight: 500; }
+.dagplan { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.uitleg b { color: var(--inkt); font-weight: 600; }
+.rond { display: inline-block; width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--signaal); flex: none; box-sizing: border-box; }
+.rond.vol { background: var(--signaal); }
+.stip.mis { background: var(--kritiek); border-radius: 2px; transform: rotate(45deg); width: 8px; height: 8px; }
+.legende { display: flex; flex-wrap: wrap; gap: 4px 16px; list-style: none; padding: 0; font-size: 12.5px; color: var(--inkt-2); }
+.legende li { display: inline-flex; align-items: center; gap: 6px; }
+.stip { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
+.stip.klant { background: var(--klant); } .stip.personeel { background: var(--inkt); } .stip.meting { background: var(--signaal); width: 6px; height: 6px; }
+
+.scherm { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.scherm-kop { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.scherm-kop span { font-family: var(--cijfer); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--inkt-2); }
+.kaarten { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 10px; }
+.kaart { all: unset; box-sizing: border-box; display: flex; flex-direction: column; gap: 5px; padding: 10px 12px; background: var(--paneel); border: 1px solid var(--lijn); border-radius: 8px; cursor: pointer; min-width: 0; font-size: 13px; }
+.kaart[aria-pressed="true"] { border-color: var(--signaal); box-shadow: 0 0 0 1px var(--signaal); }
+.kaart-kop { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 6px; }
+.kaart-naam { font-weight: 600; font-size: 13.5px; }
+.pil { font-size: 11.5px; font-weight: 600; padding: 1px 7px; border-radius: 999px; border: 1.5px solid currentColor; white-space: nowrap; }
+.s-ok { color: var(--ok); } .s-binnenkort { color: var(--waarschuwing); } .s-nu { color: var(--kritiek); } .s-leeg { color: var(--paneel); background: var(--leeg); border-color: var(--leeg); }
+.balk { display: block; height: 6px; border-radius: 3px; background: var(--tegel); overflow: hidden; }
+.balk i { display: block; height: 100%; width: 0; border-radius: 3px; background: var(--ok); }
+.rij { display: flex; justify-content: space-between; gap: 8px; color: var(--inkt-2); }
+.rij b { color: var(--inkt); font-family: var(--cijfer); font-weight: 500; font-size: 12.5px; font-variant-numeric: tabular-nums; text-align: right; }
+.zonder { background: var(--paneel); border: 1px dashed var(--lijn); border-radius: 8px; padding: 16px; color: var(--inkt-2); display: flex; flex-direction: column; gap: 6px; }
+.zonder strong { color: var(--inkt); font-size: 15px; }
+.log { list-style: none; padding: 0; display: flex; flex-direction: column; font-size: 13px; min-height: 124px; }
+.log li { display: flex; gap: 10px; padding: 5px 0; border-top: 1px solid var(--lijn); }
+.log time { font-family: var(--cijfer); font-size: 12px; color: var(--inkt-2); flex: none; padding-top: 1px; }
+.log .melding { color: var(--signaal); } .log .fout { color: var(--kritiek); } .log .leeg { color: var(--inkt-2); border-top: 0; }
+
+/* vergelijking */
+.score-doos { overflow-x: auto; }
+.score { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.score th, .score td { padding: 9px 12px; border-bottom: 1px solid var(--lijn); text-align: right; }
+.score th:first-child { text-align: left; padding-left: 0; font-weight: 400; }
+.score thead th { font-size: 12.5px; font-weight: 600; color: var(--inkt-2); vertical-align: bottom; }
+.score thead th.met { color: var(--signaal); }
+.score td { font-family: var(--cijfer); font-size: 20px; font-weight: 500; }
+.score td:last-child, .score th:last-child { padding-right: 0; }
+
+/* meting */
+.meting { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: 20px; align-items: start; }
+@media (max-width: 880px) { .meting { grid-template-columns: minmax(0, 1fr); } }
+.grafiek { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.lijn-st { display: inline-block; width: 16px; height: 0; border-top: 2px solid var(--signaal); flex: none; }
+.lijn-st.ruw { border-top: 1.5px solid var(--inkt-2); opacity: .6; } .lijn-st.vooruit { border-top-style: dashed; }
+.aflezing { font-family: var(--cijfer); font-size: 12.5px; color: var(--inkt-2); min-height: 1.5em; }
+
+/* werking */
+.stappen { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 0; counter-reset: stap; border-top: 1px solid var(--lijn); }
+.stappen li { counter-increment: stap; padding: 14px 16px 14px 0; display: flex; flex-direction: column; gap: 4px; }
+.stappen li::before { content: counter(stap, decimal-leading-zero); font-family: var(--cijfer); font-size: 12px; color: var(--signaal); }
+.stappen span { color: var(--inkt-2); font-size: 14px; }
+details { border-top: 1px solid var(--lijn); padding-top: 12px; color: var(--inkt-2); }
+summary { cursor: pointer; color: var(--inkt); font-weight: 600; }
+details ul { padding-left: 18px; margin-top: 8px; max-width: 76ch; display: flex; flex-direction: column; gap: 4px; }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="kop">
+    <p class="merk">GramIQ</p>
+    <h1>Een weegschaal onder elke groentebak</h1>
+    <p class="intro">De winkel weet hoeveel er nog ligt en wanneer een bak leeg raakt. De AI maakt er een bijvulplan van, zodat de medewerker weet welke bak wanneer aan de beurt is. Hieronder loopt een echte verkoopdag uit de dataset, twee keer tegelijk: één winkel met GramIQ en één zonder.</p>
+  </header>
+
+  <section class="bediening" aria-label="Bediening van de simulatie">
+    <button class="knop" id="speel" type="button">Pauze</button>
+    <span class="klok" id="klok">09:00</span>
+    <label class="veld" for="dag">Dag
+      <select id="dag"></select>
+    </label>
+    <fieldset class="keuze" id="snelheid">
+      <legend>Snelheid</legend>
+      <input type="radio" name="snelheid" id="sn1" value="1"><label for="sn1">1 min/s</label>
+      <input type="radio" name="snelheid" id="sn3" value="3" checked><label for="sn3">3 min/s</label>
+      <input type="radio" name="snelheid" id="sn10" value="10"><label for="sn10">10 min/s</label>
+    </fieldset>
+    <fieldset class="keuze wereld duw" id="wereld">
+      <legend>Welke winkel je ziet</legend>
+      <input type="radio" name="wereld" id="wMet" value="met" checked><label for="wMet">Met GramIQ</label>
+      <input type="radio" name="wereld" id="wZonder" value="zonder"><label for="wZonder">Zonder GramIQ</label>
+    </fieldset>
+    <button class="knop stil" id="opnieuw" type="button">Opnieuw</button>
+  </section>
+
+  <section class="toneel">
+    <div class="vloer">
+      <div class="podium" id="podium">
+        <canvas id="winkel3d" role="img" aria-label="3D-beeld van de groenteafdeling: vier bakken op een weegschaal, klanten die groenten nemen en een medewerker die bijvult"></canvas>
+        <canvas id="winkel" hidden role="img" aria-label="Bovenaanzicht van de groenteafdeling: vier bakken met een weegschaal, klanten die groenten nemen en personeel dat bijvult"></canvas>
+        <div class="labels" id="labels"></div>
+      </div>
+      <ul class="legende">
+        <li><i class="stip klant"></i>Klant</li>
+        <li><i class="stip personeel"></i>Medewerker</li>
+        <li><i class="stip meting"></i>Meting naar de winkel-PC</li>
+        <li><i class="stip mis"></i>Klant vond niet wat die zocht</li>
+      </ul>
+      <p class="hint" id="hint">Sleep om de winkel te draaien. Klik op een bak om die weegschaal te volgen.</p>
+    </div>
+    <aside class="scherm" aria-live="off">
+      <div class="scherm-kop"><h2 id="scherm-titel">Bijvulplan</h2><span id="scherm-sub">voor de medewerker</span></div>
+      <ol class="plan" id="plan"></ol>
+      <p class="plan-voet" id="plan-voet"></p>
+      <div class="zonder" id="zonder" hidden>
+        <strong>Geen weegschaal, geen plan</strong>
+        <span>Niemand weet hoeveel er in een bak ligt. Het personeel merkt een bijna lege bak pas op als iemand langsloopt, en vult dan bij wanneer er tijd is.</span>
+      </div>
+      <h3 id="log-titel">Logboek</h3>
+      <ul class="log" id="log"></ul>
+    </aside>
+  </section>
+
+  <section class="blok" id="dashboard">
+    <div class="scherm-kop"><h2>Dashboard op de winkel-PC</h2><span>live per weegschaal</span></div>
+    <div class="kaarten" id="kaarten"></div>
+  </section>
+
+  <section class="blok" id="dagplan-blok">
+    <h2>De hele dag vooruit</h2>
+    <p class="uitleg">De volle lijn is wat de weegschaal al gemeten heeft, de stippellijn wat de AI nog verwacht. Elk rondje is een bijvulbeurt. Het plan begint in de ochtend bij de dagvoorspelling van het bestelmodel en stuurt zich elke minuut bij met de metingen: <b id="plan-ochtend">—</b>.</p>
+    <div class="dagplan">
+      <ul class="legende">
+        <li><i class="lijn-st"></i>Gemeten gewicht</li>
+        <li><i class="lijn-st vooruit"></i>Verwacht verloop</li>
+        <li><i class="rond vol"></i>Bijgevuld</li>
+        <li><i class="rond"></i>Gepland</li>
+      </ul>
+      <canvas id="dagplan" role="img" aria-label="Per bak het gemeten gewicht tot nu, het verwachte verloop tot sluitingstijd en de geplande bijvulbeurten"></canvas>
+      <p class="aflezing" id="dag-aflezing">Beweeg over het plan om een moment af te lezen.</p>
+    </div>
+  </section>
+
+  <section class="blok" id="vergelijking">
+    <h2>Dezelfde klanten, twee winkels</h2>
+    <p class="uitleg">Beide winkels krijgen exact dezelfde aankopen op dezelfde momenten. Zonder GramIQ merkt het personeel een bijna lege bak toevallig op en komt het meestal 5 tot 25 minuten later. Met GramIQ volgt één medewerker het bijvulplan en begint die binnen 1 tot 4 minuten nadat een bak aan de beurt is. Dat laatste is een aanname en weegt zwaar door in de stand.</p>
+    <div class="score-doos">
+      <table class="score">
+        <thead><tr><th scope="col">Stand om <span id="score-tijd">09:00</span></th><th scope="col" class="met">Met GramIQ</th><th scope="col">Zonder GramIQ</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Klanten die niet alles vonden</th><td id="m-klanten">0</td><td id="z-klanten">0</td></tr>
+          <tr><th scope="row">Gemiste verkoop (kg)</th><td id="m-kg">0</td><td id="z-kg">0</td></tr>
+          <tr><th scope="row">Minuten met een lege bak</th><td id="m-leeg">0</td><td id="z-leeg">0</td></tr>
+          <tr><th scope="row">Bijvulbeurten</th><td id="m-vul">0</td><td id="z-vul">0</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="meting" id="meting">
+    <div class="blok">
+      <h2>Wat de weegschaal meet</h2>
+      <p class="uitleg">Elke 10 seconden stuurt de weegschaal het gewicht van de bak door. Een hand in de bak of iemand die leunt geeft een piek; de backend haalt die eruit met een mediaanfilter. Uit het gefilterde gewicht en het vraagprofiel van dit uur volgt wanneer de bak leeg is.</p>
+      <p class="uitleg">Klik op een bak of op een kaart van het dashboard om een andere weegschaal te volgen.</p>
+    </div>
+    <div class="grafiek">
+      <h3 id="grafiek-titel">Bak 01 · Broccoli</h3>
+      <ul class="legende">
+        <li><i class="lijn-st"></i>Gefilterd gewicht</li>
+        <li><i class="lijn-st ruw"></i>Ruwe meting</li>
+        <li><i class="lijn-st vooruit"></i>Voorspelling tot leeg</li>
+      </ul>
+      <canvas id="grafiek" role="img" aria-label="Gewicht van de geselecteerde bak in de laatste uren, ruw en gefilterd, met de voorspelling tot de bak leeg is"></canvas>
+      <p class="aflezing" id="aflezing">Beweeg over de grafiek om een meting af te lezen.</p>
+    </div>
+  </section>
+
+  <section class="blok" id="werking">
+    <h2>Zo werkt het</h2>
+    <ol class="stappen">
+      <li><strong>Weegschaal onder de bak</strong><span>Meet het nettogewicht en stuurt het over wifi door, elke 10 seconden.</span></li>
+      <li><strong>Winkel-PC ontvangt</strong><span>Een MQTT-broker en de backend bewaren elke meting in de database en filteren de ruis weg.</span></li>
+      <li><strong>AI rekent vooruit</strong><span>Wanneer is de bak leeg als niemand bijvult, en hoeveel moet er morgen besteld worden.</span></li>
+      <li><strong>Medewerker volgt het plan</strong><span>Het bijvulplan zegt welke bak wanneer aan de beurt is en hoeveel kilo er mee moet uit het magazijn.</span></li>
+    </ol>
+  </section>
+
+  <details>
+    <summary>Wat is echt en wat is aangenomen in deze simulatie</summary>
+    <ul>
+      <li>Echt: het tijdstip en het gewicht van elke aankoop van de gekozen dag, uit de kassadata van de supermarkt.</li>
+      <li>Aangenomen zoals in jullie simulator: de grootte van een bak (10 tot 15 kg), het gewicht per stuk, dat een klant 2 tot 15 minuten vóór het afrekenen aan de bak staat, en dat het personeel meestal 5 tot 25 minuten nodig heeft om te komen bijvullen.</li>
+      <li>Zonder GramIQ merkt het personeel een bak op wanneer die onder 12 tot 30% zakt. Met GramIQ is een bak aan de beurt bij “binnenkort bijvullen”: leeg binnen 45 minuten of minder dan 25% vol.</li>
+      <li>Eigen aanname van deze demo: met het plan staat één medewerker klaar en begint die binnen 1 tot 4 minuten, de ene bak na de andere.</li>
+      <li>Het bijvulplan start bij de dagvoorspelling van jullie bestelmodel (opnieuw getraind met jullie code, omdat het opgeslagen model hier niet kon laden) en verdeelt die over de dag met het vraagprofiel per uur. Daarna stuurt het bij met wat de weegschaal meet.</li>
+      <li>De voorspelling hier is een vereenvoudigde versie die in de browser draait: het vraagprofiel per uur maal de drukte van het laatste uur. Het prototype gebruikt het getrainde model. De foutmarge gebruikt de factoren uit het modelrapport.</li>
+      <li>De reactietijd van het personeel is toeval. Met “Opnieuw” krijg je dezelfde klanten met andere reactietijden, dus de stand verschilt per keer.</li>
+      <li>De weegschaal zelf is gesimuleerd. Met echte weegschalen is nog niet getest.</li>
+    </ul>
+  </details>
+</div>
+
+<script src="three.min.js"></script>
+<script>
+const DATA = {"dagen":[{"id":"2023-01-20","label":"vrijdag 20 januari 2023","soort":"Drukste dag van de testperiode","wd":4,"sales":[[34117,0,426],[34125,1,460],[34252,3,542],[34400,1,1178],[34510,3,1305],[34683,3,803],[34813,3,331],[34816,3,572],[34904,2,810],[34922,2,645],[34965,2,451],[35020,2,788],[35131,2,487],[35206,3,341],[35227,0,393],[35248,1,2428],[35280,3,1084],[35332,3,793],[35416,3,552],[35490,0,1095],[35848,2,895],[35965,0,928],[36008,1,1351],[36406,3,372],[36435,3,392],[36464,3,482],[36487,1,862],[36489,3,773],[36504,3,783],[36609,1,977],[36648,3,743],[36656,2,795],[36684,0,351],[36865,3,582],[36912,3,472],[36962,1,891],[36962,0,326],[36991,2,416],[37015,3,663],[37025,3,663],[37068,3,472],[37190,0,577],[37371,2,573],[37387,0,334],[37428,3,331],[37430,3,472],[37510,3,643],[37517,1,1408],[37693,2,1032],[37699,0,426],[37791,3,311],[37853,3,753],[37906,0,1405],[38053,1,632],[38055,2,401],[38099,0,360],[38118,3,442],[38119,1,819],[38120,0,318],[38134,2,1017],[38256,0,819],[38310,1,963],[38329,3,321],[38423,0,385],[38490,2,308],[38558,3,472],[38630,0,1187],[38787,3,472],[38842,3,201],[38843,1,891],[38869,3,683],[38950,0,301],[39036,3,653],[39170,0,518],[39180,1,934],[39186,3,663],[39190,3,723],[39427,3,522],[39473,3,131],[39481,1,1336],[39561,2,895],[39614,2,981],[39645,0,535],[39668,3,482],[39681,0,744],[39684,3,492],[39693,0,443],[39694,3,653],[39707,1,934],[39813,0,1062],[39824,3,612],[39825,0,385],[39843,1,1983],[39848,1,1193],[39856,0,644],[39898,1,991],[39899,3,311],[39904,3,482],[39929,3,703],[39945,1,589],[39946,3,331],[39950,3,592],[40038,0,535],[40040,3,522],[40049,3,361],[40067,0,794],[40072,3,653],[40073,0,786],[40266,0,644],[40267,0,535],[40293,0,468],[40346,1,532],[40379,2,501],[40380,0,736],[40393,3,231],[40444,1,1537],[40473,3,833],[40500,2,831],[40527,3,432],[40561,3,351],[40564,2,437],[40585,3,462],[40585,1,532],[40690,3,482],[40708,0,376],[40720,0,1137],[40784,3,472],[41027,1,1178],[41057,0,937],[41085,3,221],[41089,3,763],[41093,3,311],[41094,0,226],[41106,3,572],[41120,2,473],[41133,0,636],[41188,1,503],[41247,3,321],[41268,1,1063],[41301,3,823],[41553,0,911],[41577,1,1207],[41610,3,251],[41611,0,878],[41652,2,695],[41738,3,673],[41753,3,874],[41755,0,594],[41783,3,562],[41783,2,738],[41810,2,523],[41897,0,368],[41910,1,575],[41916,0,652],[41923,3,623],[41925,0,426],[42003,3,522],[42004,0,1221],[42010,3,402],[42049,1,503],[42065,3,482],[42123,0,502],[42152,3,281],[42202,3,673],[42260,1,1408],[42296,1,546],[42315,0,334],[42316,3,1165],[42411,1,747],[42416,2,487],[42426,0,560],[42438,3,472],[42508,3,743],[42518,2,895],[42534,2,501],[42534,3,372],[42541,1,1796],[42559,2,831],[42559,3,663],[42614,3,1104],[42614,2,437],[42699,2,1597],[42701,3,693],[42715,3,341],[42717,2,279],[42837,3,351],[43070,0,259],[43085,0,619],[43090,3,643],[43092,2,616],[43155,3,572],[43173,1,1178],[43174,1,1753],[43175,3,602],[43175,3,372],[43177,2,437],[43203,1,489],[43264,3,161],[43272,3,753],[43375,2,480],[43447,2,1067],[43448,3,1064],[43448,3,231],[43571,2,917],[43604,3,351],[43625,1,1149],[43639,2,487],[43650,2,659],[43688,0,326],[43689,2,380],[43689,3,211],[43779,3,542],[43810,1,747],[43815,3,432],[43919,2,580],[43920,3,211],[43974,1,1293],[43975,2,437],[44004,0,552],[44053,0,343],[44113,1,1178],[44115,3,442],[44117,0,301],[44132,0,318],[44283,3,372],[44321,0,778],[44333,2,523],[44333,0,878],[44341,2,265],[44347,1,1523],[44371,1,560],[44499,0,343],[44628,0,652],[44647,2,322],[44763,3,382],[44781,3,351],[44807,3,482],[44891,0,753],[44892,2,974],[45290,2,845],[45369,3,502],[45503,3,713],[45595,0,410],[45826,3,301],[45828,3,321],[45914,3,492],[45924,0,694],[45929,0,677],[46019,2,788],[46066,3,1576],[46163,1,1049],[46278,0,351],[46279,3,612],[46369,0,452],[46423,2,408],[46449,1,963],[46469,0,343],[46470,3,382],[46532,3,482],[46537,1,489],[46549,2,244],[46551,0,326],[46561,0,460],[46595,3,291],[46732,2,494],[46733,0,460],[46854,3,542],[46891,0,309],[47009,3,733],[47009,0,376],[47111,2,494],[47111,0,610],[47233,3,763],[47281,2,566],[47373,3,361],[47416,1,718],[47470,3,663],[47493,0,778],[47586,2,416],[47623,0,669],[47624,2,788],[47704,0,636],[47724,3,1004],[47737,3,623],[47806,2,416],[47951,1,891],[48067,3,522],[48095,0,753],[48178,0,1062],[48178,3,703],[48319,0,552],[48332,0,326],[48332,1,259],[48357,1,690],[48358,0,468],[48378,3,592],[48463,3,452],[48532,3,462],[48594,2,437],[48632,3,612],[48841,3,392],[48888,3,572],[48889,2,824],[48889,1,891],[48917,3,341],[48969,2,401],[48990,3,633],[49010,2,774],[49011,3,462],[49176,3,582],[49179,1,790],[49271,3,783],[49282,1,1322],[49302,3,1355],[49310,2,1547],[49395,0,326],[49404,3,623],[49474,2,473],[49478,3,783],[49495,1,517],[49496,3,643],[49505,3,542],[49521,3,763],[49571,1,302],[49713,3,763],[49855,1,1796],[49971,3,412],[50252,3,502],[50482,3,753],[50501,1,1437],[50901,3,502],[50912,3,382],[51040,3,562],[51143,3,562],[51269,1,1782],[51283,3,502],[51284,1,1624],[51301,2,330],[51474,2,387],[51559,3,502],[51591,2,745],[51614,3,432],[51890,2,552],[51933,2,595],[52462,3,733],[52527,1,905],[52527,0,251],[52528,3,392],[52609,2,358],[52629,3,341],[52741,1,690],[52741,3,452],[52749,3,562],[52791,3,602],[52792,2,731],[52847,2,459],[52852,3,653],[52915,3,372],[53037,3,331],[53042,1,1695],[53042,2,573],[53374,3,402],[53558,0,293],[53807,0,426],[53866,3,562],[53901,1,963],[53901,0,619],[53914,2,1089],[53916,0,1079],[53975,3,793],[54107,2,459],[54225,3,392],[54280,3,783],[54281,1,1106],[54281,0,920],[54430,3,432],[54493,2,265],[54766,2,459],[54817,2,573],[54928,2,430],[55042,3,432],[55173,0,401],[55247,3,321],[55259,3,201],[55411,0,485],[55434,0,727],[55449,3,572],[55465,0,577],[55466,2,380],[55566,1,1451],[55570,0,460],[55603,2,573],[55696,3,924],[55800,1,1149],[55863,1,532],[55864,3,472],[55865,2,509],[55922,3,201],[55982,1,776],[56182,3,432],[56201,2,473],[56350,2,903],[56626,3,301],[56630,1,1322],[56647,3,512],[56652,3,1387],[56705,1,1422],[56839,3,482],[56842,0,995],[56945,1,603],[56949,2,509],[56950,0,452],[56989,3,241],[57012,3,402],[57013,2,494],[57246,2,509],[57262,0,527],[57275,3,361],[57437,3,392],[57507,0,418],[57564,3,592],[57628,3,562],[57628,0,343],[57827,3,442],[57895,3,612],[57901,2,709],[57901,3,623],[57902,1,2414],[57916,3,1125],[57964,3,311],[58081,2,322],[58247,3,311],[58489,0,661],[58703,0,619],[58725,1,848],[58840,2,416],[58841,3,592],[58849,0,1656],[58850,3,793],[58873,3,432],[58873,2,681],[58878,3,412],[58885,0,535],[58955,2,387],[58972,0,243],[58983,0,920],[59054,1,1006],[59058,2,537],[59111,2,444],[59111,3,592],[59123,0,736],[59215,0,284],[59269,3,532],[59421,1,977],[59474,3,934],[59474,3,201],[59505,3,683],[59617,0,636],[59729,0,1003],[59749,2,602],[59829,0,1329],[60023,1,661],[60033,2,788],[60041,3,472],[60041,3,392],[60056,1,876],[60059,2,1032],[60060,3,914],[60322,0,209],[60376,2,466],[60433,1,1035],[60524,3,281],[60620,3,1024],[60664,2,537],[60677,0,385],[60763,0,435],[60844,0,401],[60885,3,351],[60933,2,566],[60937,1,704],[60943,2,781],[60962,0,627],[61012,1,819],[61012,3,492],[61074,0,351],[61140,3,703],[61188,3,633],[61201,2,824],[61229,3,623],[61267,3,422],[61273,3,382],[61277,3,653],[61280,0,627],[61286,2,824],[61286,3,422],[61345,3,341],[61394,0,351],[61607,0,284],[61610,0,1940],[61612,0,418],[61663,0,652],[61771,0,702],[61793,3,653],[61966,3,462],[61986,2,387],[62005,1,374],[62038,3,532],[62101,1,905],[62107,0,694],[62115,1,1322],[62162,2,1017],[62177,3,562],[62187,0,886],[62256,1,2759],[62317,2,337],[62333,2,509],[62361,3,281],[62414,3,783],[62508,3,622],[62642,0,510],[62679,3,452],[62912,3,321],[62970,2,430],[63018,3,372],[63043,0,401],[63056,0,870],[63116,0,878],[63143,3,1024],[63158,1,1609],[63203,0,360],[63377,0,669],[63605,2,473],[63606,0,711],[63820,3,592],[63934,0,418],[63966,2,910],[64046,3,572],[64138,3,743],[64189,3,432],[64306,3,783],[64308,1,316],[64362,3,763],[64431,0,334],[64442,3,512],[64590,3,452],[64654,3,482],[64729,3,612],[64729,0,1296],[64794,0,744],[64990,3,331],[65035,0,886],[65092,3,472],[65106,2,523],[65174,2,451],[65307,2,430],[65389,3,522],[65401,1,1006],[65401,0,753],[65402,3,906],[65464,1,632],[65530,3,552],[65545,3,522],[65573,3,512],[65588,1,1695],[65630,0,644],[65884,0,401],[65993,3,572],[66183,0,569],[66359,3,542],[66360,3,633],[66405,2,623],[66465,1,891],[66521,0,401],[66929,0,343],[67057,3,141],[67134,3,793],[67202,0,619],[67209,0,769],[67209,3,673],[67497,3,492],[67512,1,805],[67519,2,587],[67558,0,535],[67560,1,1322],[67571,0,385],[67744,1,1911],[67775,2,845],[67806,0,753],[67887,2,236],[67903,1,833],[68144,0,493],[68201,0,786],[68306,3,361],[68521,3,432],[68683,1,905],[68688,0,602],[68931,0,351],[69103,3,311],[69103,0,711],[69110,3,703],[69117,3,683],[69330,3,281],[69391,3,402],[70049,2,459],[70049,0,811],[70051,3,808],[70202,0,627],[70312,3,693],[70416,0,694],[70657,3,673],[70792,3,291],[70857,3,693],[70962,3,361],[71021,0,309],[71158,0,351],[71458,3,1044],[71592,3,864],[71635,3,582],[71827,3,753],[71911,0,368],[72074,0,937],[72145,3,823],[72145,0,669],[72154,3,291],[72157,3,552],[72178,0,301],[72196,0,510],[72748,3,351],[73117,1,445],[73183,2,229],[73221,3,612],[73549,1,503],[73550,3,602],[73550,1,963],[73602,0,769],[73768,3,703],[73768,0,276],[73862,0,727],[74115,3,382],[74177,0,326],[74362,0,343],[74552,0,268],[74552,3,301],[76016,1,1509],[76237,0,376],[76237,3,341],[76921,0,560],[77317,0,284],[77958,0,284],[77976,0,610],[78277,0,1246],[78432,0,468],[78866,0,276]],"ai":[{"verwacht":37.5,"veilig":66.5,"echt":102.2,"gisteren":62.2},{"verwacht":40.8,"veilig":52.5,"echt":101.0,"gisteren":61.0},{"verwacht":32.6,"veilig":62.4,"echt":68.5,"gisteren":55.3},{"verwacht":56.8,"veilig":79.9,"echt":148.3,"gisteren":107.3}]},{"id":"2023-06-03","label":"zaterdag 3 juni 2023","soort":"Gewone zaterdag","wd":5,"sales":[[33351,0,322],[33402,3,403],[33480,0,308],[33863,3,403],[34151,3,161],[34192,2,625],[34221,2,473],[34231,3,444],[34278,1,651],[34502,0,229],[34600,3,766],[34730,0,337],[34777,0,294],[34960,3,282],[35590,2,442],[35591,0,251],[35831,0,215],[36113,0,358],[36167,3,302],[36336,3,302],[36503,3,504],[36615,0,294],[36622,2,610],[36685,3,645],[36793,3,282],[36849,2,793],[37017,1,399],[37019,3,323],[37131,3,202],[37144,2,549],[37146,2,564],[37335,0,480],[37575,3,242],[37641,0,244],[37758,3,222],[37848,0,236],[37898,0,365],[38100,1,1071],[39047,0,222],[39113,2,1143],[39284,0,501],[39465,3,403],[39725,1,483],[40022,3,504],[40032,0,265],[40243,0,279],[40243,3,585],[40258,2,335],[40258,3,907],[40387,3,343],[40387,0,315],[40430,2,1159],[40562,0,222],[40715,0,623],[40720,3,544],[40833,0,652],[40866,3,464],[40957,2,762],[41031,3,182],[41067,0,466],[41069,2,991],[41165,3,504],[41251,2,671],[41601,2,320],[41618,1,567],[41814,3,262],[41895,0,251],[42110,3,423],[42124,0,387],[42628,3,1190],[42848,0,523],[42933,3,807],[43169,3,222],[43595,3,222],[43610,0,416],[43733,3,363],[43761,1,924],[43818,1,336],[43820,3,262],[43823,0,201],[44459,3,262],[45243,0,695],[45289,3,343],[45550,3,302],[45724,0,459],[45763,0,573],[46623,1,1071],[47192,0,609],[47193,2,457],[49692,0,573],[49766,2,625],[49796,2,549],[49796,3,262],[50214,0,330],[50748,2,351],[50872,3,363],[51009,0,279],[51355,2,259],[51742,0,229],[51743,3,222],[52291,3,121],[52561,0,401],[52934,0,208],[53039,2,823],[53193,0,193],[53194,0,279],[54072,0,201],[54072,1,483],[54126,3,423],[54442,3,423],[54542,2,488],[54591,0,459],[54755,3,343],[55168,2,656],[55388,2,595],[55494,3,302],[55688,2,381],[56272,2,564],[56971,3,302],[57220,3,363],[57267,1,840],[58212,0,258],[58278,0,580],[58570,0,709],[58971,2,457],[59118,2,1174],[59141,3,403],[59291,0,380],[59783,0,566],[59861,0,265],[60116,3,484],[60296,0,322],[60605,0,394],[60638,3,444],[61063,2,838],[61225,3,262],[61259,2,412],[61976,2,747],[62058,2,503],[62100,0,480],[62237,3,182],[62270,1,630],[62343,0,781],[62367,0,738],[62579,3,423],[62728,0,301],[62789,0,215],[62849,3,323],[63431,2,701],[63510,3,302],[64095,0,322],[64125,1,567],[64305,0,380],[65814,3,262],[65840,1,546],[66172,3,686],[66217,0,244],[66386,2,290],[66638,2,549],[67551,2,305],[67933,0,494],[68210,0,272],[68353,2,366],[69310,3,383],[69408,2,640],[69744,2,518],[69749,3,403],[69993,0,258],[70039,3,565],[70701,0,294],[71119,3,222],[71168,0,208],[72163,0,322],[72500,3,262],[72608,0,222],[72683,2,549],[74632,0,1039],[74677,3,202],[74678,2,488],[75190,2,259],[75913,3,262],[76497,3,444],[76723,2,534],[76814,2,320],[76816,3,686],[76990,3,343],[77504,0,201],[78143,2,457],[78756,3,484]],"ai":[{"verwacht":17.4,"veilig":22.0,"echt":25.0,"gisteren":12.8},{"verwacht":4.2,"veilig":7.4,"echt":8.6,"gisteren":1.9},{"verwacht":18.9,"veilig":27.4,"echt":25.3,"gisteren":11.6},{"verwacht":20.3,"veilig":29.9,"echt":25.7,"gisteren":9.8}]},{"id":"2023-06-01","label":"donderdag 1 juni 2023","soort":"Rustige weekdag","wd":3,"sales":[[34250,3,484],[34277,0,437],[34327,0,279],[34374,0,580],[34614,2,412],[34779,3,182],[35105,3,343],[35145,2,671],[36112,3,202],[36653,0,301],[36749,0,387],[36864,3,302],[37129,2,305],[37278,0,351],[37545,3,403],[37870,3,121],[38328,0,394],[38330,2,549],[38377,2,351],[38452,3,262],[38477,3,423],[38790,0,315],[38798,3,202],[39377,3,182],[39378,0,287],[39597,2,549],[39663,2,305],[40121,2,351],[40207,0,587],[40643,3,262],[40814,3,141],[40888,2,274],[41135,0,430],[41718,2,488],[41723,2,473],[41888,0,673],[42223,0,802],[42533,3,625],[42858,2,381],[44059,2,488],[45338,2,473],[45510,0,580],[47061,0,358],[47200,0,330],[49756,0,351],[50671,3,423],[51211,3,363],[52150,1,819],[52284,2,488],[53005,0,251],[54479,0,201],[55169,3,242],[55568,0,294],[56946,3,625],[57325,2,305],[57341,0,416],[57528,2,869],[58134,0,459],[58341,3,323],[58766,3,383],[59096,3,383],[59450,2,381],[59586,0,358],[59650,2,198],[60499,3,262],[60748,1,420],[61253,0,423],[61589,2,930],[61633,1,672],[62981,1,504],[63279,3,182],[63352,0,566],[63602,3,383],[63805,3,524],[63807,3,504],[64100,0,222],[64150,0,459],[64605,0,344],[64910,2,473],[65317,0,416],[66115,3,343],[66208,3,141],[66774,0,322],[66870,2,518],[66981,3,625],[67256,3,706],[67467,3,544],[68489,0,573],[69962,3,383],[73077,2,381],[73344,0,408],[74069,3,544],[74810,3,907],[75263,3,383],[75462,0,215],[76999,3,302],[77000,2,290],[77500,3,202]],"ai":[{"verwacht":11.5,"veilig":15.9,"echt":13.4,"gisteren":11.0},{"verwacht":3.8,"veilig":6.0,"echt":2.4,"gisteren":2.5},{"verwacht":15.5,"veilig":21.7,"echt":10.9,"gisteren":16.0},{"verwacht":20.7,"veilig":26.9,"echt":13.8,"gisteren":21.6}]}],"profiel":{"4":[[1671,2504,2292,1225,1015,1110,1693,2269,2235,2572,1911,1713,539],[2977,4162,3484,1695,1234,1332,2051,2291,2207,1871,1051,338,103],[759,1312,993,663,475,639,865,1216,1387,1671,1352,1260,554],[1412,2412,1956,1036,855,1154,1569,2013,2149,2464,1774,1809,803]],"5":[[2424,4860,4339,1974,1445,1922,2329,3262,3802,2785,2129,1776,880],[4027,7532,6034,2424,1710,1763,2109,2577,2240,1677,1043,291,10],[886,2135,2029,864,690,943,1413,1452,2207,1544,1171,1161,445],[2256,3950,3224,1764,1093,1529,2155,2729,3300,2776,2027,2070,1071]],"3":[[1723,2774,2030,1053,857,1049,1588,1888,2037,2225,1832,1660,454],[2563,3780,2432,1106,1011,1215,1912,2152,1957,1690,1107,421,58],[784,1057,838,426,351,451,882,1062,1392,1262,1177,964,352],[1590,2147,1675,824,692,882,1415,1936,2072,2115,1609,1652,597]]}};
+
+//<core>
+const OPEN = 9 * 3600, DICHT = 22 * 3600, STAP = 10;
+const BAKKEN = [
+  {id: '01', naam: 'Broccoli', stuk: 400, sd: 60, cap: 15000, kleur: 'broccoli'},
+  {id: '02', naam: 'Lotuswortel', stuk: 450, sd: 90, cap: 15000, kleur: 'lotus'},
+  {id: '03', naam: 'Aubergine', stuk: 250, sd: 40, cap: 10000, kleur: 'aubergine'},
+  {id: '04', naam: 'Groene paprika', stuk: 60, sd: 12, cap: 12000, kleur: 'paprika'},
+];
+// foutmarge van het echte model (ai/model_rapport.json): factor op de voorspelde minuten, per grootteorde
+const MARGE = {grenzen: [0, 10, 20, 40, 80, 160, 1e9], f: [[.405, 2.751], [.330, 3.346], [.441, 2.725], [.509, 3.013], [.535, 2.278], [.555, 1.597]]};
+const VOL = .93;                               // tot hoe vol het plan een bak laat bijvullen
+const RUIMTE = .6;                             // bijvullen heeft pas zin onder 60% vol
+
+function maakRng(seed) {
+  let a = seed >>> 0;
+  return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+const uni = (r, a, b) => a + (b - a) * r();
+const norm = (r, m, s) => m + s * Math.sqrt(-2 * Math.log(1 - r())) * Math.cos(2 * Math.PI * r());
+function poisson(r, l) { const L = Math.exp(-l); let k = 0, p = 1; do { k++; p *= r(); } while (p > L); return k - 1; }
+
+// De echte aankopen van één dag omzetten naar klanten aan de bak en losse stukken die uit de bak gaan.
+function bouwDag(dag, profiel) {
+  const rng = maakRng(20230101 + dag.wd);
+  const klanten = [], stukken = [];
+  for (const [sec, b, g] of dag.sales) {
+    const p = BAKKEN[b];
+    const tBak = Math.max(OPEN + uni(rng, 20, 240), sec - uni(rng, 120, 900));
+    if (tBak > DICHT - 120) continue;
+    const n = Math.max(1, Math.round(g / p.stuk));
+    const ws = Array.from({length: n}, () => Math.max(p.stuk * .5, norm(rng, p.stuk, p.sd)));
+    const som = ws.reduce((x, y) => x + y, 0);
+    const k = {id: klanten.length, bak: b, g, tBak, tKlaar: 0, tKassa: 0, plek: klanten.length % 5, dx: rng(), dy: rng()};
+    let t = tBak;
+    ws.forEach((w) => { t += uni(rng, 1.5, 4); stukken.push({t, bak: b, w: w * g / som, k: k.id}); });
+    k.tKlaar = t + 1;
+    k.tKassa = Math.max(sec, k.tKlaar + 90);
+    klanten.push(k);
+  }
+  stukken.sort((x, y) => x.t - y.t);
+  const leun = BAKKEN.map(() => Array.from({length: poisson(rng, 2.5)}, () => ({t: uni(rng, OPEN, DICHT), d: uni(rng, 3, 15), a: uni(rng, 800, 3000)})));
+  return {klanten, stukken, leun, prof: profiel[String(dag.wd)], ai: dag.ai.map((a) => a.verwacht)};
+}
+
+function maakWereld(met, seed) {
+  const rng = maakRng(seed);
+  return {met, rng, si: 0, log: [], jobs: [], mis: new Set(), flits: [], plan: [], vul: [], bezetTot: -1,
+    score: {klanten: 0, kg: 0, leegSec: 0, vul: 0},
+    bak: BAKKEN.map((p) => ({w: p.cap * uni(rng, .9, 1), drempel: uni(rng, .12, .30), gepland: null, job: null, bezigTot: -1, vullen: null,
+      ruw: [], filt: null, hist: [], dagHist: [], afname: [], dagAfname: 0, grijpTot: -1, grijpA: 0, kratTot: -1, kratA: 0,
+      pred: null, status: 'ok', wasLeeg: false, verbruik: 0, vooruit: null, vooruitT: 0})),
+  };
+}
+
+const tijd = (t) => { const m = Math.floor(t / 60); return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); };
+const mediaan = (a) => { const s = [...a].sort((x, y) => x - y); return s[s.length >> 1]; };
+function bepaalStatus(pct, minuten) {          // zelfde regels als backend/main.py
+  if (pct < 3) return 'leeg';
+  if ((minuten !== null && minuten <= 15) || pct < 10) return 'nu';
+  if ((minuten !== null && minuten <= 45) || pct < 25) return 'binnenkort';
+  return 'ok';
+}
+const perMin = (prof, b, t) => { const h = Math.floor(t / 3600) - 9; return h >= 0 && h < 13 ? prof[b][h] / 60 : 0; };
+function verwacht(prof, b, t0, t1) { let s = 0; for (let t = t0; t < t1; t += 60) s += perMin(prof, b, t); return s; }
+
+// Vereenvoudigde voorspelling "wanneer is de bak leeg": vraagprofiel van dit uur maal de drukte van het laatste uur.
+function voorspel(bak, p, b, t, prof) {
+  const sinds = t - OPEN;
+  if (sinds < 600) return null;                 // "nog te weinig data (min. 10 min)"
+  const venster = Math.min(3600, sinds);
+  let echt = 0;
+  for (const a of bak.afname) if (a.t > t - venster) echt += a.g;
+  const normaal = verwacht(prof, b, t - venster, t);
+  const drukte = normaal > 30 ? Math.min(8, Math.max(.3, echt / normaal)) : 1;
+  let rest = bak.filt, m = null;
+  if (rest <= p.stuk * .4) m = 0;
+  else for (let tau = t, i = 0; tau < DICHT; tau += 60, i++) {
+    rest -= perMin(prof, b, tau) * drukte;
+    if (rest <= 0) { m = i + 1; break; }
+  }
+  if (m === null) return {m: null, drukte};
+  let k = 0;
+  while (k < 5 && m >= MARGE.grenzen[k + 1]) k++;
+  return {m, drukte, om: t + m * 60, vroegst: t + m * 60 * MARGE.f[k][0], laatst: t + m * 60 * MARGE.f[k][1]};
+}
+
+// Het bijvulplan: per bak vooruit rekenen tot sluitingstijd.
+// Start bij de dagvoorspelling van het bestelmodel (AI 2), verdeeld over de uren met het vraagprofiel,
+// en stuurt bij met wat de weegschaal vandaag al mat.
+function maakPlan(w, t, dag) {
+  const {prof, ai} = dag, beurten = [];
+  w.bak.forEach((bak, b) => {
+    const p = BAKKEN[b], profDag = prof[b].reduce((x, y) => x + y, 0);
+    const aiDrukte = ai[b] * 1000 / profDag;
+    const normaalTotNu = verwacht(prof, b, OPEN, t), uren = (t - OPEN) / 3600;
+    const dagDrukte = normaalTotNu > 30 ? (aiDrukte * 2 + (bak.dagAfname / normaalTotNu) * uren) / (2 + uren) : aiDrukte;
+    const nuDrukte = bak.pred ? bak.pred.drukte : dagDrukte;
+    const n = Math.max(0, Math.ceil((DICHT - t) / 60));
+    const vraag = new Float32Array(n + 46);
+    for (let i = 0; i < n; i++) vraag[i] = perMin(prof, b, t + i * 60) * (dagDrukte + (nuDrukte - dagDrukte) * Math.exp(-i / 90));
+    let g = bak.filt === null ? bak.w : bak.filt, komend = 0, rust = 0;
+    for (let i = 0; i < 45; i++) komend += vraag[i];
+    if (bak.vullen || bak.gepland !== null) {
+      beurten.push({b, t: bak.gepland === null ? t : bak.gepland, kg: Math.max(0, p.cap * VOL - g) / 1000, bezig: true});
+      g = Math.max(g, p.cap * VOL); rust = 10;
+    }
+    const lijn = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      if (rust <= 0 && g < Math.max(p.cap * .25, Math.min(komend, p.cap * RUIMTE)) && t + i * 60 < DICHT - 1200) {
+        beurten.push({b, t: t + i * 60, kg: (p.cap * VOL - g) / 1000, bezig: false});
+        g = p.cap * VOL; rust = 10;
+      }
+      g = Math.max(0, g - vraag[i]); komend += vraag[i + 45] - vraag[i]; rust--;
+      lijn[i] = g;
+    }
+    bak.vooruit = lijn; bak.vooruitT = t;
+  });
+  w.plan = beurten.sort((x, y) => x.t - y.t);
+}
+
+function reactietijd(rng) { return Math.min(90 * 60, Math.exp(norm(rng, Math.log(14 * 60), .7))); }  // zoals ai/weegschaal_model.py
+function stuur(w, bak, b, wanneer) {
+  bak.gepland = wanneer;
+  bak.job = {bak: b, tAan: wanneer, tKlaar: null};
+  w.jobs.push(bak.job);
+}
+
+// Eén stap van 10 seconden voor één winkel.
+function stap(w, t, dag) {
+  const {stukken, leun, prof} = dag;
+  while (w.si < stukken.length && stukken[w.si].t <= t) {
+    const e = stukken[w.si++], bak = w.bak[e.bak], p = BAKKEN[e.bak];
+    let mis = 0;
+    if (bak.w <= p.stuk * .4) mis = e.w;
+    else { const neem = Math.min(e.w, bak.w); bak.w -= neem; mis = e.w - neem; }
+    if (mis > 1) {
+      w.score.kg += mis / 1000;
+      if (!w.mis.has(e.k)) { w.mis.add(e.k); w.score.klanten++; w.log.push({t: e.t, soort: 'fout', tekst: `Klant vond te weinig ${p.naam.toLowerCase()}`}); }
+    }
+    if (e.t > bak.grijpTot) bak.grijpA = uni(w.rng, 30, 300);
+    bak.grijpTot = e.t + STAP;
+    // zonder GramIQ: iemand merkt de bijna lege bak op en komt later bijvullen
+    if (!w.met && bak.gepland === null && !bak.vullen && bak.w < p.cap * bak.drempel && e.t > bak.bezigTot) {
+      stuur(w, bak, e.bak, e.t + reactietijd(w.rng));
+      bak.drempel = uni(w.rng, .12, .30);
+    }
+  }
+  const minuut = t % 60 === 0;
+  w.bak.forEach((bak, b) => {
+    const p = BAKKEN[b];
+    if (bak.gepland !== null && t >= bak.gepland) {
+      bak.vullen = {doel: p.cap * uni(w.rng, .85, 1), volgende: bak.gepland};
+      bak.gepland = null;
+      w.score.vul++; w.vul.push({b, t});
+      w.log.push({t, soort: 'info', tekst: `Bak ${p.id} ${p.naam} wordt bijgevuld`});
+    }
+    while (bak.vullen && bak.vullen.volgende <= t) {
+      if (bak.w < bak.vullen.doel - 300) {
+        bak.w += Math.min(bak.vullen.doel - bak.w, uni(w.rng, 1800, 4500));
+        bak.kratA = uni(w.rng, 400, 1500); bak.kratTot = bak.vullen.volgende + STAP;
+        bak.vullen.volgende += uni(w.rng, 15, 45);
+      } else { bak.bezigTot = bak.vullen.volgende; if (bak.job) bak.job.tKlaar = bak.vullen.volgende; bak.job = null; bak.vullen = null; }
+    }
+    const leeg = bak.w <= p.stuk * .4;
+    if (leeg) w.score.leegSec += STAP;
+    if (leeg && !bak.wasLeeg) w.log.push({t, soort: 'fout', tekst: `Bak ${p.id} ${p.naam} is leeg`});
+    bak.wasLeeg = leeg;
+
+    // de meting: echt gewicht + sensorruis + een hand, een krat of iemand die leunt
+    let ruw = bak.w + norm(w.rng, 0, 1.5);
+    if (t <= bak.grijpTot) ruw += bak.grijpA;
+    if (t <= bak.kratTot) ruw += bak.kratA;
+    for (const l of leun[b]) if (l.t <= t && l.t + l.d + STAP > t) ruw += l.a;
+    bak.ruw.push(ruw); if (bak.ruw.length > 7) bak.ruw.shift();
+    const filt = Math.max(0, mediaan(bak.ruw));
+    if (bak.filt !== null) { const d = bak.filt - filt; if (d > 0 && d < p.cap * .1) { bak.afname.push({t, g: d}); bak.dagAfname += d; } }
+    bak.filt = filt;
+    bak.hist.push({t, r: ruw, f: filt}); if (bak.hist.length > 1500) bak.hist.shift();
+
+    if (minuut) {
+      bak.dagHist.push({t, f: filt});
+      while (bak.afname.length && bak.afname[0].t < t - 3600) bak.afname.shift();
+      let v = 0; for (const a of bak.afname) if (a.t > t - 1800) v += a.g;
+      bak.verbruik = v / 30;
+      bak.pred = voorspel(bak, p, b, t, prof);
+      bak.status = bepaalStatus(100 * filt / p.cap, bak.pred ? bak.pred.m : null);
+      // met GramIQ: de bak is aan de beurt in het plan, de medewerker begint eraan zodra die vrij is
+      const pct = 100 * filt / p.cap, aanDeBeurt = pct < 25 || (bak.pred && bak.pred.m !== null && bak.pred.m <= 45 && pct < 100 * RUIMTE);
+      if (w.met && aanDeBeurt && bak.gepland === null && !bak.vullen && t > bak.bezigTot + 120 && t < DICHT - 600) {
+        const wanneer = Math.max(t + uni(w.rng, 60, 240), w.bezetTot + 60);
+        stuur(w, bak, b, wanneer); w.bezetTot = wanneer + 150;
+        w.flits.push(b);
+        const rond = bak.pred && bak.pred.m !== null ? `, anders leeg rond ${tijd(bak.pred.om)}` : '';
+        w.log.push({t, soort: 'melding', tekst: `Plan: bak ${p.id} ${p.naam} is aan de beurt${rond}`});
+      }
+    }
+  });
+  if (minuut && w.met) maakPlan(w, t, dag);
+  if (w.log.length > 60) w.log.splice(0, w.log.length - 60);
+}
+//</core>
+
+// ---------------------------------------------------------------- toestand
+const $ = (id) => document.getElementById(id);
+const nl1 = new Intl.NumberFormat('nl-BE', {minimumFractionDigits: 1, maximumFractionDigits: 1});
+const nl0 = new Intl.NumberFormat('nl-BE', {maximumFractionDigits: 0});
+const STATUS = {ok: 'In orde', binnenkort: 'Binnenkort bijvullen', nu: 'Nu bijvullen!', leeg: 'LEEG'};
+const S = {dag: null, dagData: null, met: null, zonder: null, simT: OPEN, stapT: OPEN, speelt: true, snelheid: 3, zicht: 'met', gekozen: 0, ronde: 0, klaar: false, ochtend: 0};
+let K = {}, L = null, flitsen = [], drieD = null;
+
+function leesKleuren() {
+  const cs = getComputedStyle(document.documentElement), k = (n) => cs.getPropertyValue(n).trim();
+  K = {vloer: k('--vloer'), paneel: k('--paneel'), inkt: k('--inkt'), inkt2: k('--inkt-2'), lijn: k('--lijn'), tegel: k('--tegel'), signaal: k('--signaal'), zacht: k('--signaal-zacht'),
+    ok: k('--ok'), binnenkort: k('--waarschuwing'), nu: k('--kritiek'), leeg: k('--leeg'), klant: k('--klant'), muur: k('--muur'), vloer3d: k('--vloer3d'), hout: k('--hout'), tafel: k('--tafel'),
+    broccoli: k('--p-broccoli'), lotus: k('--p-lotus'), aubergine: k('--p-aubergine'), paprika: k('--p-paprika')};
+  if (drieD) drieD.thema();
+}
+
+function start(dagId, tot) {
+  S.dag = DATA.dagen.find((d) => d.id === dagId) || DATA.dagen[0];
+  S.dagData = bouwDag(S.dag, DATA.profiel);
+  const seed = 7 + S.ronde * 101;
+  S.met = maakWereld(true, seed);
+  S.zonder = maakWereld(false, seed);
+  S.simT = S.stapT = OPEN; S.klaar = false;
+  maakPlan(S.met, OPEN, S.dagData);            // het ochtendplan: alleen de dagvoorspelling, nog geen metingen
+  S.ochtend = S.met.plan.length;
+  while (S.stapT < tot) { S.stapT += STAP; stap(S.met, S.stapT, S.dagData); stap(S.zonder, S.stapT, S.dagData); }
+  S.simT = S.stapT;
+  S.met.flits.length = 0;
+}
+
+// ---------------------------------------------------------------- waar staat wie (zelfde regels voor 2D en 3D)
+const meng = (a, b, f) => ({x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f});
+const zacht = (f) => f < 0 ? 0 : f > 1 ? 1 : f * f * (3 - 2 * f);
+const plekKlant = (l, k) => { const c = l.bakken[k.bak]; return {x: c.x + (k.plek - 2) * l.bw * .2, y: c.y + l.bh / 2 + l.af + (k.id % 2) * l.rij}; };
+const plekPersoneel = (l, b) => ({x: l.bakken[b].x - l.bw / 2 - l.zij, y: l.bakken[b].y});
+function plaatsKlant(l, k, T) {
+  const bij = plekKlant(l, k), dwaal = {x: l.dwaal.x0 + k.dx * (l.dwaal.x1 - l.dwaal.x0), y: l.dwaal.y0 + k.dy * (l.dwaal.y1 - l.dwaal.y0)};
+  const tDwaal = k.tKlaar + Math.min(120, (k.tKassa - k.tKlaar) * .4), tNaarKassa = Math.max(tDwaal, k.tKassa - 60);
+  if (T < k.tBak) return meng(l.ingang, bij, zacht((T - (k.tBak - 70)) / 70));
+  if (T < k.tKlaar) return bij;
+  if (T < tDwaal) return meng(bij, dwaal, zacht((T - k.tKlaar) / (tDwaal - k.tKlaar)));
+  if (T < tNaarKassa) return dwaal;
+  if (T < k.tKassa) return meng(dwaal, l.kassa, zacht((T - tNaarKassa) / (k.tKassa - tNaarKassa)));
+  if (T < k.tKassa + 30) return l.kassa;
+  return meng(l.kassa, l.uit, zacht((T - k.tKassa - 30) / 50));
+}
+function plaatsPersoneel(l, j, T) {            // geeft {x, y, krat} of null
+  const aan = plekPersoneel(l, j.bak);
+  if (T >= j.tAan - 100 && T < j.tAan) return {...meng(l.thuis, aan, zacht((T - (j.tAan - 100)) / 100)), krat: true};
+  if (T >= j.tAan && (j.tKlaar === null || T < j.tKlaar)) return {...aan, krat: false};
+  if (j.tKlaar !== null && T < j.tKlaar + 100) return {...meng(aan, l.thuis, zacht((T - j.tKlaar) / 100)), krat: false};
+  return null;
+}
+function langsPad(pad, f) {
+  const len = pad.slice(1).map((p, i) => Math.hypot(p.x - pad[i].x, p.y - pad[i].y, (p.z || 0) - (pad[i].z || 0))), tot = len.reduce((a, b) => a + b, 0);
+  let d = f * tot;
+  for (let i = 0; i < len.length; i++) {
+    if (d <= len[i]) { const g = len[i] ? d / len[i] : 0, a = pad[i], b = pad[i + 1]; return {x: a.x + (b.x - a.x) * g, y: a.y + (b.y - a.y) * g, z: (a.z || 0) + ((b.z || 0) - (a.z || 0)) * g}; }
+    d -= len[i];
+  }
+  return pad[pad.length - 1];
+}
+function pasCanvas(c, ctx, hoogte) {
+  const W = Math.max(280, Math.round(c.clientWidth)), H = hoogte(W), dpr = Math.min(2, window.devicePixelRatio || 1);
+  if (c.width !== Math.round(W * dpr) || c.height !== Math.round(H * dpr)) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); c.style.height = H + 'px'; }
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return [W, H];
+}
+function rr(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+
+// ---------------------------------------------------------------- 3D-winkel (three.js)
+// In de 3D-ruimte is "y" van de plattegrond de diepte (z); x loopt van links naar rechts.
+const L3 = {bw: 3.4, bh: 2, bakken: [-7.5, -2.5, 2.5, 7.5].map((x) => ({x, y: -2})), ingang: {x: -10.5, y: 9}, uit: {x: 11, y: 9}, kassa: {x: 8.1, y: 4.8},
+  dwaal: {x0: -8.5, x1: 4, y0: 2.4, y1: 6.8}, thuis: {x: -9, y: -7}, af: .75, rij: .6, zij: .55};
+
+function maak3D(canvas, labelDoos) {
+  const T3 = window.THREE;
+  const renderer = new T3.WebGLRenderer({canvas, antialias: true});
+  renderer.outputEncoding = T3.sRGBEncoding;
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = T3.PCFSoftShadowMap;
+  const scene = new T3.Scene(), cam = new T3.PerspectiveCamera(34, 1.6, .1, 200);
+  const hemi = new T3.HemisphereLight(0xffffff, 0x8a938c, .8), zon = new T3.DirectionalLight(0xffffff, .7);
+  zon.position.set(9, 18, 11); zon.castShadow = true; zon.shadow.mapSize.set(1024, 1024);
+  Object.assign(zon.shadow.camera, {left: -17, right: 17, top: 14, bottom: -14, near: 1, far: 50}); zon.shadow.bias = -.0005;
+  scene.add(hemi, zon);
+
+  const mat = (naam, extra) => { const m = new T3.MeshStandardMaterial({roughness: .85, metalness: 0, ...extra}); M[naam] = m; return m; };
+  const M = {};
+  const doos = (w, h, d, m, x, y, z, ouder) => { const o = new T3.Mesh(new T3.BoxGeometry(w, h, d), m); o.position.set(x, y, z); o.castShadow = o.receiveShadow = true; (ouder || scene).add(o); return o; };
+  mat('vloer'); mat('muur'); mat('tafel'); mat('hout'); mat('paneel'); mat('donker'); mat('klant'); mat('personeel');
+  mat('huid'); M.huid.color.set(0xD8B594).convertSRGBToLinear(); mat('mis', {emissiveIntensity: .7});
+  M.signaal = new T3.MeshBasicMaterial(); M.scherm = new T3.MeshStandardMaterial({emissiveIntensity: .9});
+  const klantKleur = [null, 0x7F8FA6, 0xA6907F, 0x8FA37C].map((c) => c === null ? M.klant : new T3.MeshStandardMaterial({color: new T3.Color(c).convertSRGBToLinear(), roughness: .85}));
+  BAKKEN.forEach((p) => mat(p.kleur, {roughness: .7, flatShading: p.kleur === 'broccoli'}));
+
+  // vloer, muren, magazijn, rekken, kassa
+  const vloer = new T3.Mesh(new T3.PlaneGeometry(26, 19), M.vloer); vloer.rotation.x = -Math.PI / 2; vloer.position.set(-.3, 0, .6); vloer.receiveShadow = true; scene.add(vloer);
+  doos(26, 3.4, .3, M.muur, -.3, 1.7, -9);  doos(.3, 3.4, 19, M.muur, -13.3, 1.7, .6);
+  doos(2.4, 2.6, .12, M.donker, -9, 1.3, -8.82);                                   // deur van het magazijn
+  [[-11.6, .35, -7.9], [-11.6, 1.05, -7.9], [-11.5, .35, -6.9]].forEach(([x, y, z]) => doos(.9, .7, .9, M.hout, x, y, z));
+  for (let i = 0; i < 3; i++) { doos(.7, 1.9, 3.4, M.tafel, -12.75, .95, -3.2 + i * 4.2); doos(.72, .08, 3.42, M.paneel, -12.75, 1.3, -3.2 + i * 4.2); }
+  for (let i = 0; i < 2; i++) doos(4.2, 1.9, .7, M.tafel, -3.4 + i * 5.2, .95, -8.45);
+  doos(1.3, 1, 3.2, M.tafel, 9.7, .5, 4.8); doos(.6, .35, .6, M.donker, 9.7, 1.18, 4.2);
+  doos(2.6, .02, 1.3, M.muur, -10.5, .012, 9.2).castShadow = false; doos(2.6, .02, 1.3, M.muur, 11, .012, 9.2).castShadow = false;
+  // winkel-PC
+  const pc = new T3.Group(); scene.add(pc);
+  doos(2.6, .85, 1.1, M.tafel, 8.5, .425, -8.1, pc); doos(.12, .45, .12, M.donker, 8.5, 1.05, -8.3, pc);
+  doos(1.5, .9, .1, M.donker, 8.5, 1.65, -8.3, pc); const scherm = doos(1.36, .76, .02, M.scherm, 8.5, 1.65, -8.24, pc); scherm.castShadow = false;
+
+  // de vier bakken: tafel, weegschaalplaat (kleur = status), krat en groenten
+  const bakken = BAKKEN.map((p, b) => {
+    const c = L3.bakken[b], g = new T3.Group(); g.position.set(c.x, 0, c.y); scene.add(g);
+    const tafel = doos(L3.bw + .7, .8, L3.bh + .7, M.tafel, 0, .4, 0, g); tafel.userData.bak = b;
+    const plaat = doos(L3.bw + .35, .12, L3.bh + .35, new T3.MeshStandardMaterial({roughness: .5, emissiveIntensity: .55}), 0, .86, 0, g); plaat.userData.bak = b;
+    const y0 = .92, wh = .62;
+    doos(L3.bw, .06, L3.bh, M.hout, 0, y0 + .03, 0, g);
+    [[0, L3.bh / 2, L3.bw, .08], [0, -L3.bh / 2, L3.bw, .08], [L3.bw / 2, 0, .08, L3.bh], [-L3.bw / 2, 0, .08, L3.bh]].forEach(([x, z, w, d]) => doos(w, wh, d, M.hout, x, y0 + wh / 2, z, g).userData.bak = b);
+    const vorm = {broccoli: [6, 4, 2, .2], lotus: [5, 3, 2, .2], aubergine: [6, 4, 2, .17], paprika: [10, 6, 2, .12]}[p.kleur], [kol, rij, laag, r] = vorm;
+    const geo = p.kleur === 'broccoli' ? new T3.IcosahedronGeometry(r * 1.15, 0) : new T3.SphereGeometry(r, 10, 8);
+    const inst = new T3.InstancedMesh(geo, M[p.kleur], kol * rij * laag); inst.castShadow = true; g.add(inst);
+    const rng = maakRng(40 + b), o = new T3.Object3D(), plekken = [];
+    for (let l = 0; l < laag; l++) for (let i = 0; i < kol; i++) for (let j = 0; j < rij; j++) plekken.push({l, x: ((i + .5 + uni(rng, -.2, .2)) / kol - .5) * (L3.bw - .3), z: ((j + .5 + uni(rng, -.2, .2)) / rij - .5) * (L3.bh - .3), o: rng(), h: rng() * Math.PI});
+    plekken.sort((u, v) => u.l - v.l || u.o - v.o).forEach((q, i) => {
+      o.position.set(q.x, y0 + .08 + r + q.l * r * 1.5, q.z); o.rotation.set(0, q.h, 0);
+      o.scale.set(p.kleur === 'lotus' ? 1.6 : p.kleur === 'aubergine' ? 1.7 : 1, p.kleur === 'lotus' || p.kleur === 'aubergine' ? .62 : 1, p.kleur === 'lotus' ? .7 : p.kleur === 'aubergine' ? .6 : 1);
+      o.updateMatrix(); inst.setMatrixAt(i, o.matrix);
+    });
+    inst.instanceMatrix.needsUpdate = true;
+    return {g, plaat, inst, totaal: plekken.length};
+  });
+
+  // datalijnen (kabels over de vloer) en een stipje per meting
+  const paden = BAKKEN.map((p, b) => { const x = L3.bakken[b].x + L3.bw / 2 + .55; return [{x, y: .9, z: -2}, {x, y: .05, z: -2}, {x, y: .05, z: -6.6}, {x: 8.5, y: .05, z: -6.6}, {x: 8.5, y: .05, z: -7.5}, {x: 8.5, y: .9, z: -7.5}]; });
+  const data = new T3.Group(); scene.add(data);
+  M.lijn = new T3.LineDashedMaterial({dashSize: .25, gapSize: .2, transparent: true, opacity: .7});
+  paden.forEach((pad) => { const l = new T3.Line(new T3.BufferGeometry().setFromPoints(pad.map((q) => new T3.Vector3(q.x, q.y, q.z))), M.lijn); l.computeLineDistances(); data.add(l); });
+  const stipjes = paden.map(() => { const s = new T3.Mesh(new T3.SphereGeometry(.14, 10, 8), M.signaal); data.add(s); return s; });
+  const ring = new T3.Mesh(new T3.RingGeometry(.9, 1.15, 40), new T3.MeshBasicMaterial({transparent: true, opacity: 0, side: T3.DoubleSide}));
+  ring.rotation.x = -Math.PI / 2; ring.position.set(L3.thuis.x, .04, L3.thuis.y); scene.add(ring);
+
+  // mensen: een voorraad figuurtjes die elke frame aan de zichtbare klanten wordt toegewezen
+  const gLijf = new T3.CylinderGeometry(.2, .3, 1, 12), gHoofd = new T3.SphereGeometry(.21, 12, 10), gTas = new T3.SphereGeometry(.15, 8, 6), gMis = new T3.OctahedronGeometry(.2);
+  const figuur = (lijfMat, schaal) => {
+    const g = new T3.Group(), lijf = new T3.Mesh(gLijf, lijfMat), hoofd = new T3.Mesh(gHoofd, M.huid), tas = new T3.Mesh(gTas, M.broccoli), mis = new T3.Mesh(gMis, M.mis);
+    lijf.position.y = .5; hoofd.position.y = 1.2; tas.position.set(.3, .55, .12); mis.position.y = 1.85; lijf.castShadow = hoofd.castShadow = true;
+    g.add(lijf, hoofd, tas, mis); g.scale.setScalar(schaal); g.visible = false; scene.add(g);
+    return {g, lijf, tas, mis};
+  };
+  const klanten = Array.from({length: 70}, () => figuur(M.klant, 1));
+  const personeel = Array.from({length: 5}, () => { const f = figuur(M.personeel, 1.12); f.krat = doos(.6, .42, .5, M.hout, 0, .62, .42, f.g); return f; });
+
+  // labels boven de bakken en bij de plekken (gewone HTML, geprojecteerd vanuit de 3D-ruimte)
+  const lab = (klasse, x, y, z) => { const e = document.createElement('div'); e.className = 'lab ' + klasse; labelDoos.append(e); return {e, p: new T3.Vector3(x, y, z)}; };
+  const bakLab = BAKKEN.map((p, b) => { const l = lab('', L3.bakken[b].x, 2.35, L3.bakken[b].y), n = document.createElement('b'), s = document.createElement('span'); n.textContent = p.naam; l.e.append(n, s); l.s = s; return l; });
+  const plekLab = [['Magazijn', -9, 3.9, -9], ['Winkel-PC', 8.5, 2.6, -8.3], ['Kassa', 9.7, 1.9, 4.8], ['Ingang', -10.5, .5, 9.4], ['Uitgang', 11, .5, 9.4]].map(([t, x, y, z]) => { const l = lab('plek', x, y, z); l.e.textContent = t; return l; });
+
+  // camera: slepen draait rond de winkel
+  const kijk = {hoek: .3, kantel: .86, W: 0, H: 0};
+  let sleep = null, versleept = false;
+  canvas.addEventListener('pointerdown', (e) => { sleep = {x: e.clientX, y: e.clientY, hoek: kijk.hoek, kantel: kijk.kantel, muis: e.pointerType === 'mouse'}; versleept = false; canvas.setPointerCapture(e.pointerId); });
+  canvas.addEventListener('pointermove', (e) => {
+    if (!sleep) return;
+    const dx = e.clientX - sleep.x, dy = e.clientY - sleep.y;
+    if (Math.abs(dx) + Math.abs(dy) > 5) versleept = true;
+    kijk.hoek = Math.max(-1.25, Math.min(1.25, sleep.hoek - dx * .006));
+    if (sleep.muis) kijk.kantel = Math.max(.35, Math.min(1.3, sleep.kantel - dy * .005));
+  });
+  const los = (e) => {
+    if (sleep && !versleept) {
+      const r = canvas.getBoundingClientRect(), straal = new T3.Raycaster();
+      straal.setFromCamera({x: (e.clientX - r.left) / r.width * 2 - 1, y: -(e.clientY - r.top) / r.height * 2 + 1}, cam);
+      const raak = straal.intersectObjects(bakken.map((k) => k.g), true).find((h) => h.object.userData.bak !== undefined);
+      if (raak) kies(raak.object.userData.bak);
+    }
+    sleep = null;
+  };
+  canvas.addEventListener('pointerup', los); canvas.addEventListener('pointercancel', () => { sleep = null; });
+
+  const v = new T3.Vector3();
+  function thema() {
+    const zet = (m, k) => M[m].color.set(K[k]).convertSRGBToLinear();
+    zet('vloer', 'vloer3d'); zet('muur', 'muur'); zet('tafel', 'tafel'); zet('hout', 'hout'); zet('paneel', 'paneel'); zet('donker', 'inkt2'); zet('klant', 'klant'); zet('personeel', 'inkt');
+    zet('signaal', 'signaal'); zet('lijn', 'signaal'); zet('mis', 'nu'); M.mis.emissive.copy(M.mis.color);
+    M.scherm.color.set(K.signaal).convertSRGBToLinear(); M.scherm.emissive.copy(M.scherm.color); ring.material.color.set(K.signaal).convertSRGBToLinear();
+    BAKKEN.forEach((p) => zet(p.kleur, p.kleur));
+    renderer.setClearColor(K.vloer);
+    const donker = matchMedia('(prefers-color-scheme: dark)').matches && document.documentElement.dataset.theme !== 'light' || document.documentElement.dataset.theme === 'dark';
+    hemi.intensity = donker ? .85 : .8; zon.intensity = donker ? .75 : .7;
+  }
+
+  function teken(nu) {
+    const W = Math.max(280, Math.round(canvas.clientWidth)), H = Math.round(W >= 640 ? W * .6 : W * .92);
+    if (W !== kijk.W || H !== kijk.H) { kijk.W = W; kijk.H = H; canvas.style.height = H + 'px'; renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1)); renderer.setSize(W, H, false); cam.aspect = W / H; cam.updateProjectionMatrix(); }
+    const afstand = 24.5 * Math.max(1, 1.66 / cam.aspect), doel = {x: -.9, y: .9, z: .4};
+    cam.position.set(doel.x + afstand * Math.sin(kijk.kantel) * Math.sin(kijk.hoek), doel.y + afstand * Math.cos(kijk.kantel), doel.z + afstand * Math.sin(kijk.kantel) * Math.cos(kijk.hoek));
+    cam.lookAt(doel.x, doel.y, doel.z);
+    const w = S[S.zicht], met = S.zicht === 'met', T = S.simT;
+    pc.visible = data.visible = met;
+    BAKKEN.forEach((p, b) => {
+      const k = bakken[b], bak = w.bak[b];
+      k.inst.count = Math.ceil(k.totaal * Math.min(1, bak.w / p.cap));
+      k.plaat.visible = met;
+      if (met) { k.plaat.material.color.set(K[bak.status]).convertSRGBToLinear(); k.plaat.material.emissive.copy(k.plaat.material.color); }
+      const q = langsPad(paden[b], (nu / 1300 + b * .27) % 1);
+      stipjes[b].position.set(q.x, q.y, q.z); stipjes[b].visible = S.speelt && !S.klaar;
+      const l = bakLab[b];
+      l.s.textContent = met && bak.filt !== null ? `${nl1.format(bak.filt / 1000)} kg · ${Math.round(100 * bak.filt / p.cap)}%` : 'geen meting';
+      l.s.style.color = met ? `var(--${bak.status === 'ok' ? 'ok' : bak.status === 'binnenkort' ? 'waarschuwing' : 'kritiek'})` : '';
+      l.e.classList.toggle('gekozen', met && b === S.gekozen);
+    });
+    plekLab[1].e.hidden = !met;
+    let n = 0;
+    for (const k of S.dagData.klanten) {
+      if (T < k.tBak - 70 || T > k.tKassa + 80 || n >= klanten.length) continue;
+      const f = klanten[n++], q = plaatsKlant(L3, k, T), mis = w.mis.has(k.id) && T >= k.tBak;
+      f.g.visible = true; f.g.position.set(q.x, 0, q.y); f.lijf.material = klantKleur[k.id % 4];
+      f.mis.visible = mis; f.tas.visible = !mis && T >= k.tKlaar; f.tas.material = M[BAKKEN[k.bak].kleur];
+      if (mis) f.mis.rotation.y = nu / 400;
+    }
+    for (; n < klanten.length; n++) klanten[n].g.visible = false;
+    let m = 0;
+    for (const j of w.jobs) {
+      const q = m < personeel.length ? plaatsPersoneel(L3, j, T) : null;
+      if (!q) continue;
+      const f = personeel[m++];
+      f.g.visible = true; f.g.position.set(q.x, 0, q.y); f.tas.visible = f.mis.visible = false; f.krat.visible = q.krat;
+    }
+    for (; m < personeel.length; m++) personeel[m].g.visible = false;
+    const flits = met && flitsen.length ? 1 - (nu - flitsen[flitsen.length - 1].t0) / 1400 : 0;
+    ring.visible = flits > 0;
+    if (flits > 0) { ring.material.opacity = flits; ring.scale.setScalar(1 + (1 - flits) * 1.6); }
+    renderer.render(scene, cam);
+    for (const l of [...bakLab, ...plekLab]) { v.copy(l.p).project(cam); l.e.style.transform = `translate(-50%, -100%) translate(${((v.x + 1) / 2 * W).toFixed(1)}px, ${((1 - v.y) / 2 * H).toFixed(1)}px)`; }
+  }
+  return {teken, thema};
+}
+
+// ---------------------------------------------------------------- 2D-plattegrond (alleen als 3D niet kan)
+const cv = $('winkel'), cx = cv.getContext('2d'), gv = $('grafiek'), gx = gv.getContext('2d'), dv = $('dagplan'), dx = dv.getContext('2d');
+const items = BAKKEN.map((p, b) => {
+  const r = maakRng(99 + b), kol = b === 3 ? 13 : b === 2 ? 9 : 8, rij = b === 3 ? 6 : 4, lijst = [];
+  for (let i = 0; i < kol; i++) for (let j = 0; j < rij; j++) lijst.push({x: (i + .5 + uni(r, -.22, .22)) / kol, y: (j + .5 + uni(r, -.22, .22)) / rij, h: uni(r, 0, Math.PI), o: r()});
+  return {kol, rij, lijst: lijst.sort((x, y) => x.o - y.o)};
+});
+function maakLayout(W) {
+  const staand = W < 520, H = Math.round(staand ? W * 1.24 : W * .6);
+  const l = {W, H, staand, bw: staand ? W * .36 : W * .17, bh: staand ? H * .105 : H * .2, af: 13, rij: 9, zij: 10};
+  l.bakken = (staand ? [[.27, .31], [.73, .31], [.27, .55], [.73, .55]] : [[.125, .44], [.375, .44], [.625, .44], [.875, .44]]).map(([x, y]) => ({x: x * W, y: y * H}));
+  l.muur = H * (staand ? .09 : .135);
+  l.magazijn = {x: W * .035, y: 8, w: W * (staand ? .38 : .21), h: l.muur - 14};
+  l.pc = {x: W * (staand ? .585 : .755), y: 8, w: W * (staand ? .38 : .21), h: l.muur - 14};
+  l.bus = l.muur + 12; l.thuis = {x: l.magazijn.x + l.magazijn.w * .5, y: l.muur + 12};
+  l.ingang = {x: W * .08, y: H + 8}; l.uit = {x: W * .95, y: H + 8};
+  l.kassa = {x: W * (staand ? .76 : .84), y: H * (staand ? .9 : .85)};
+  l.dwaal = {x0: W * .16, x1: W * .6, y0: H * (staand ? .74 : .72), y1: H * (staand ? .94 : .93)};
+  return l;
+}
+function tekenGroente(ctx, soort, x, y, r, hoek) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(hoek);
+  ctx.fillStyle = K[soort]; ctx.strokeStyle = K.paneel; ctx.lineWidth = 1;
+  ctx.beginPath();
+  if (soort === 'broccoli') { ctx.arc(-r * .45, 0, r * .62, 0, 7); ctx.arc(r * .45, 0, r * .62, 0, 7); ctx.arc(0, -r * .5, r * .62, 0, 7); }
+  else if (soort === 'lotus') ctx.ellipse(0, 0, r * 1.25, r * .62, 0, 0, 7);
+  else if (soort === 'aubergine') ctx.ellipse(0, 0, r * 1.2, r * .55, 0, 0, 7);
+  else ctx.arc(0, 0, r * .8, 0, 7);
+  ctx.fill(); ctx.stroke();
+  ctx.restore();
+}
+function tekenWinkel2D(nu) {
+  const [W, H] = pasCanvas(cv, cx, (w) => maakLayout(w).H);
+  if (!L || L.W !== W) L = maakLayout(W);
+  const w = S[S.zicht], met = S.zicht === 'met', T = S.simT, ctx = cx;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = K.tegel; ctx.fillRect(0, 0, W, L.muur);
+  ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
+  const vak = (d, titel, actief) => {
+    rr(ctx, d.x, d.y, d.w, d.h, 6); ctx.fillStyle = actief ? K.zacht : K.paneel; ctx.fill(); ctx.strokeStyle = actief ? K.signaal : K.lijn; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.fillStyle = K.inkt; ctx.font = '600 12px "IBM Plex Sans", sans-serif'; ctx.fillText(titel, d.x + d.w / 2, d.y + d.h / 2);
+  };
+  vak(L.magazijn, 'Magazijn', false);
+  if (met) vak(L.pc, 'Winkel-PC', true);
+  rr(ctx, L.kassa.x + 12, L.kassa.y - 20, 16, 40, 3); ctx.fillStyle = K.paneel; ctx.fill(); ctx.strokeStyle = K.lijn; ctx.stroke();
+  ctx.fillStyle = K.inkt2; ctx.font = '11px "IBM Plex Sans", sans-serif'; ctx.textAlign = 'left';
+  ctx.fillText('Kassa', L.kassa.x + 12, L.kassa.y - 30); ctx.fillText('Ingang', Math.max(6, L.ingang.x - 18), H - 10);
+  BAKKEN.forEach((p, b) => {
+    const c = L.bakken[b], bak = w.bak[b], x = c.x - L.bw / 2, y = c.y - L.bh / 2;
+    if (met) {
+      const px = L.pc.x + L.pc.w / 2, pad = [{x: c.x + L.bw / 2 + 7, y: c.y}, {x: c.x + L.bw / 2 + 7, y: L.bus}, {x: px, y: L.bus}, {x: px, y: L.pc.y + L.pc.h}];
+      ctx.strokeStyle = K.signaal; ctx.globalAlpha = .35; ctx.lineWidth = 1; ctx.setLineDash([3, 4]);
+      ctx.beginPath(); pad.forEach((q, i) => i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1;
+      if (S.speelt && !S.klaar) { const q = langsPad(pad, (nu / 1100 + b * .27) % 1); ctx.fillStyle = K.signaal; ctx.beginPath(); ctx.arc(q.x, q.y, 3, 0, 7); ctx.fill(); }
+      rr(ctx, x - 5, y - 5, L.bw + 10, L.bh + 10, 9); ctx.fillStyle = K.zacht; ctx.fill(); ctx.strokeStyle = K[bak.status]; ctx.lineWidth = bak.status === 'ok' ? 1.5 : 3; ctx.stroke();
+    }
+    rr(ctx, x, y, L.bw, L.bh, 6); ctx.fillStyle = K.paneel; ctx.fill(); ctx.strokeStyle = b === S.gekozen && met ? K.signaal : K.inkt2; ctx.lineWidth = 1.5; ctx.stroke();
+    const it = items[b], n = Math.ceil(it.lijst.length * Math.min(1, bak.w / p.cap)), r = Math.min((L.bw - 12) / it.kol, (L.bh - 12) / it.rij) * .46;
+    for (let i = 0; i < n; i++) { const g = it.lijst[i]; tekenGroente(ctx, p.kleur, x + 6 + g.x * (L.bw - 12), y + 6 + g.y * (L.bh - 12), r, g.h); }
+    ctx.textAlign = 'left'; ctx.fillStyle = K.inkt; ctx.font = '600 12px "IBM Plex Sans", sans-serif'; ctx.fillText(p.naam, x - 4, y - 31);
+    ctx.font = '12px "IBM Plex Mono", monospace';
+    if (met && bak.filt !== null) { ctx.fillStyle = K[bak.status]; ctx.fillText(`${nl1.format(bak.filt / 1000)} kg · ${Math.round(100 * bak.filt / p.cap)}%`, x - 4, y - 15); }
+    else { ctx.fillStyle = K.inkt2; ctx.fillText('geen meting', x - 4, y - 15); }
+  });
+  for (const j of w.jobs) {
+    const q = plaatsPersoneel(L, j, T); if (!q) continue;
+    if (q.krat) { ctx.fillStyle = K.hout; rr(ctx, q.x + 5, q.y - 5, 10, 10, 2); ctx.fill(); }
+    ctx.fillStyle = K.inkt; ctx.strokeStyle = K.paneel; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(q.x, q.y, 7, 0, 7); ctx.fill(); ctx.stroke();
+  }
+  for (const k of S.dagData.klanten) {
+    if (T < k.tBak - 70 || T > k.tKassa + 80) continue;
+    const q = plaatsKlant(L, k, T), mis = w.mis.has(k.id) && T >= k.tBak;
+    ctx.fillStyle = K.klant; ctx.strokeStyle = K.paneel; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(q.x, q.y, 5.5, 0, 7); ctx.fill(); ctx.stroke();
+    if (mis) { ctx.fillStyle = K.nu; ctx.save(); ctx.translate(q.x, q.y - 12); ctx.rotate(Math.PI / 4); ctx.fillRect(-3.5, -3.5, 7, 7); ctx.restore(); }
+    else if (T >= k.tKlaar) { ctx.fillStyle = K[BAKKEN[k.bak].kleur]; ctx.beginPath(); ctx.arc(q.x + 5, q.y + 4, 3.2, 0, 7); ctx.fill(); }
+  }
+}
+
+// ---------------------------------------------------------------- grafiek van één weegschaal
+let grafiekMaat = null, dagMaat = null;
+function tekenGrafiek() {
+  const [W, H] = pasCanvas(gv, gx, (w) => w < 440 ? 210 : 250), ctx = gx, p = BAKKEN[S.gekozen], bak = S.met.bak[S.gekozen], T = S.simT;
+  const ml = 44, mr = 14, mt = 12, mb = 26, t0 = Math.max(OPEN, T - 150 * 60), t1 = Math.min(DICHT, Math.max(T + 60 * 60, t0 + 210 * 60)), ymax = p.cap * 1.08;
+  const x = (t) => ml + (t - t0) / (t1 - t0) * (W - ml - mr), y = (g) => mt + (1 - g / ymax) * (H - mt - mb);
+  grafiekMaat = {t0, t1, ml, mr, W};
+  ctx.clearRect(0, 0, W, H);
+  ctx.font = '11.5px "IBM Plex Mono", monospace'; ctx.textBaseline = 'middle';
+  for (let kg = 0; kg <= p.cap / 1000; kg += 5) {
+    ctx.strokeStyle = kg ? K.tegel : K.lijn; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(ml, y(kg * 1000) + .5); ctx.lineTo(W - mr, y(kg * 1000) + .5); ctx.stroke();
+    ctx.fillStyle = K.inkt2; ctx.textAlign = 'right'; ctx.fillText(kg + ' kg', ml - 8, y(kg * 1000));
+  }
+  ctx.textAlign = 'center';
+  for (let h = Math.ceil(t0 / 3600); h * 3600 <= t1; h++) ctx.fillText(h + 'u', x(h * 3600), H - 10);
+  ctx.save(); ctx.beginPath(); ctx.rect(ml, mt - 8, W - ml - mr, H - mt - mb + 8); ctx.clip();
+  const zicht = bak.hist.filter((m) => m.t >= t0);
+  ctx.strokeStyle = K.inkt2; ctx.globalAlpha = .55; ctx.lineWidth = 1; ctx.beginPath();
+  zicht.forEach((m, i) => i ? ctx.lineTo(x(m.t), y(m.r)) : ctx.moveTo(x(m.t), y(m.r))); ctx.stroke(); ctx.globalAlpha = 1;
+  ctx.strokeStyle = K.signaal; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.beginPath();
+  zicht.forEach((m, i) => i ? ctx.lineTo(x(m.t), y(m.f)) : ctx.moveTo(x(m.t), y(m.f))); ctx.stroke();
+  ctx.restore();
+  if (bak.pred && bak.pred.m !== null && bak.filt > 0) {
+    ctx.strokeStyle = K.signaal; ctx.lineWidth = 1.5; ctx.setLineDash([5, 4]);
+    const tEind = Math.min(bak.pred.om, t1), f = (tEind - T) / Math.max(1, bak.pred.om - T);
+    ctx.beginPath(); ctx.moveTo(x(T), y(bak.filt)); ctx.lineTo(x(tEind), y(bak.filt * (1 - f))); ctx.stroke(); ctx.setLineDash([]);
+    const a = Math.max(T, bak.pred.vroegst), b = Math.min(t1, bak.pred.laatst);
+    if (b > a) { ctx.globalAlpha = .3; ctx.fillStyle = K.signaal; rr(ctx, x(a), y(0) - 4, x(b) - x(a), 8, 4); ctx.fill(); ctx.globalAlpha = 1; }
+    if (bak.pred.om <= t1) { ctx.fillStyle = K.signaal; ctx.strokeStyle = K.paneel; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x(bak.pred.om), y(0), 4.5, 0, 7); ctx.fill(); ctx.stroke(); }
+  }
+  ctx.strokeStyle = K.inkt2; ctx.lineWidth = 1; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(x(T) + .5, mt); ctx.lineTo(x(T) + .5, H - mb); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = K.inkt2; ctx.textAlign = x(T) > W - 60 ? 'right' : 'left'; ctx.fillText('nu', x(T) + (x(T) > W - 60 ? -5 : 5), mt + 4);
+}
+function leesAf(ev) {
+  if (!grafiekMaat) return;
+  const r = gv.getBoundingClientRect(), g = grafiekMaat, t = g.t0 + (ev.clientX - r.left - g.ml) / (g.W - g.ml - g.mr) * (g.t1 - g.t0);
+  const h = S.met.bak[S.gekozen].hist;
+  if (!h.length || t > h[h.length - 1].t + 60 || t < h[0].t - 60) { $('aflezing').textContent = 'Beweeg over de grafiek om een meting af te lezen.'; return; }
+  let best = h[0]; for (const m of h) if (Math.abs(m.t - t) < Math.abs(best.t - t)) best = m;
+  $('aflezing').textContent = `${tijd(best.t)} · gefilterd ${nl1.format(best.f / 1000)} kg · ruw ${nl1.format(best.r / 1000)} kg`;
+}
+
+// ---------------------------------------------------------------- de hele dag: gemeten, verwacht en de bijvulbeurten
+function tekenDagplan() {
+  const smal = dv.clientWidth < 560, baan = smal ? 66 : 54, mt = 6, mb = 24, ml = smal ? 34 : 132, mr = 14;
+  const [W, H] = pasCanvas(dv, dx, () => mt + 4 * baan + mb), ctx = dx, T = S.simT, w = S.met;
+  const x = (t) => ml + (t - OPEN) / (DICHT - OPEN) * (W - ml - mr);
+  dagMaat = {ml, mr, W, mt, baan};
+  ctx.clearRect(0, 0, W, H); ctx.textBaseline = 'middle';
+  ctx.font = '11.5px "IBM Plex Mono", monospace'; ctx.fillStyle = K.inkt2; ctx.textAlign = 'center';
+  for (let h = 9; h <= 22; h += (W < 560 ? 2 : 1)) {
+    ctx.fillText(h + 'u', x(h * 3600), H - 10);
+    ctx.strokeStyle = K.tegel; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x(h * 3600) + .5, mt); ctx.lineTo(x(h * 3600) + .5, H - mb); ctx.stroke();
+  }
+  BAKKEN.forEach((p, b) => {
+    const bak = w.bak[b], top = mt + b * baan, kop = smal ? 30 : 18, onder = top + baan - 6, y = (g) => onder - Math.min(1, g / p.cap) * (baan - kop - 6);
+    ctx.strokeStyle = K.lijn; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(ml, onder + .5); ctx.lineTo(W - mr, onder + .5); ctx.stroke();
+    ctx.fillStyle = K.inkt; ctx.font = '600 12.5px "IBM Plex Sans", sans-serif';
+    if (smal) { ctx.textAlign = 'left'; ctx.fillText(p.naam, 2, top + 8); } else { ctx.textAlign = 'right'; ctx.fillText(p.naam, ml - 14, (top + kop + onder) / 2); }
+    ctx.font = '10.5px "IBM Plex Mono", monospace'; ctx.fillStyle = K.inkt2; ctx.textAlign = 'right';
+    if (smal) ctx.fillText(p.cap / 1000 + ' kg', ml - 5, y(p.cap) + 3);
+    // gemeten tot nu
+    if (bak.dagHist.length) {
+      ctx.beginPath(); bak.dagHist.forEach((m, i) => i ? ctx.lineTo(x(m.t), y(m.f)) : ctx.moveTo(x(m.t), y(m.f)));
+      ctx.strokeStyle = K.signaal; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.stroke();
+      ctx.lineTo(x(bak.dagHist[bak.dagHist.length - 1].t), onder); ctx.lineTo(x(bak.dagHist[0].t), onder); ctx.closePath(); ctx.globalAlpha = .1; ctx.fillStyle = K.signaal; ctx.fill(); ctx.globalAlpha = 1;
+    }
+    // verwacht tot sluitingstijd
+    if (bak.vooruit && bak.vooruit.length) {
+      ctx.beginPath(); ctx.moveTo(x(bak.vooruitT), y(bak.filt === null ? bak.w : bak.filt));
+      for (let i = 0; i < bak.vooruit.length; i++) ctx.lineTo(x(bak.vooruitT + (i + 1) * 60), y(bak.vooruit[i]));
+      ctx.strokeStyle = K.signaal; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]); ctx.globalAlpha = .75; ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1;
+    }
+    const my = top + kop - 6;
+    for (const v of w.vul) if (v.b === b) { ctx.fillStyle = K.signaal; ctx.beginPath(); ctx.arc(x(v.t), my, 4, 0, 7); ctx.fill(); }
+    for (const v of w.plan) if (v.b === b && !v.bezig) { ctx.fillStyle = K.paneel; ctx.strokeStyle = K.signaal; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x(v.t), my, 3.5, 0, 7); ctx.fill(); ctx.stroke(); }
+  });
+  ctx.strokeStyle = K.inkt; ctx.lineWidth = 1; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(x(T) + .5, mt); ctx.lineTo(x(T) + .5, H - mb); ctx.stroke(); ctx.setLineDash([]);
+}
+function leesDagAf(ev) {
+  if (!dagMaat) return;
+  const r = dv.getBoundingClientRect(), g = dagMaat, t = OPEN + (ev.clientX - r.left - g.ml) / (g.W - g.ml - g.mr) * (DICHT - OPEN), b = Math.floor((ev.clientY - r.top - g.mt) / g.baan);
+  if (t < OPEN || t > DICHT || b < 0 || b > 3) { $('dag-aflezing').textContent = 'Beweeg over het plan om een moment af te lezen.'; return; }
+  const bak = S.met.bak[b], p = BAKKEN[b];
+  let tekst;
+  if (t <= S.simT) { const m = bak.dagHist[Math.min(bak.dagHist.length - 1, Math.max(0, Math.round((t - OPEN) / 60) - 1))]; tekst = m ? `${nl1.format(m.f / 1000)} kg gemeten` : 'nog geen meting'; }
+  else { const i = Math.round((t - bak.vooruitT) / 60) - 1; tekst = bak.vooruit && i >= 0 && i < bak.vooruit.length ? `± ${nl1.format(bak.vooruit[i] / 1000)} kg verwacht` : '—'; }
+  const beurt = S.met.plan.find((v) => v.b === b && !v.bezig && v.t > S.simT);
+  $('dag-aflezing').textContent = `${p.naam} · ${tijd(t)} · ${tekst}` + (beurt ? ` · volgende beurt rond ${tijd(beurt.t)}` : '');
+}
+
+// ---------------------------------------------------------------- dashboard, plan en logboek
+const maak = (tag, cls, tekst) => { const e = document.createElement(tag); if (cls) e.className = cls; if (tekst !== undefined) e.textContent = tekst; return e; };
+const kaartEl = BAKKEN.map((p, b) => {
+  const k = maak('button', 'kaart'); k.type = 'button'; k.id = 'kaart-' + p.id;
+  const kop = maak('span', 'kaart-kop'), pil = maak('span', 'pil s-ok', STATUS.ok), balk = maak('span', 'balk'), vul = maak('i');
+  kop.append(maak('span', 'kaart-naam', `Bak ${p.id} · ${p.naam}`), pil); balk.append(vul);
+  const rij = (label) => { const r = maak('span', 'rij'), v = maak('b', '', '—'); r.append(maak('span', '', label), v); k.append(r); return v; };
+  k.append(kop, balk);
+  const delen = {pil, vul, gewicht: rij('Gewicht'), stuks: rij('Geschat aantal'), verbruik: rij('Verbruik (30 min)'), leeg: rij('Leeg om'), marge: rij('Marge'), dag: rij('Vandaag verkocht')};
+  k.addEventListener('click', () => kies(b));
+  $('kaarten').append(k);
+  return {k, ...delen};
+});
+function kies(b) { S.gekozen = b; $('grafiek-titel').textContent = `Bak ${BAKKEN[b].id} · ${BAKKEN[b].naam}`; kaartEl.forEach((e, i) => e.k.setAttribute('aria-pressed', i === b)); tekenGrafiek(); }
+
+function werkPlanBij() {
+  const T = S.simT, w = S.met, lijst = w.plan.slice(0, 6), rest = w.plan.filter((v) => !v.bezig);
+  const ol = $('plan');
+  if (!lijst.length) ol.replaceChildren(maak('li', 'geen', 'Vandaag geen bijvulbeurt meer nodig.'));
+  else ol.replaceChildren(...lijst.map((v) => {
+    const p = BAKKEN[v.b], li = maak('li', v.bezig ? 'nu' : ''), wat = maak('span', 'wat'), over = Math.round((v.t - T) / 60);
+    wat.append(maak('b', '', `Bak ${p.id} · ${p.naam}`), maak('small', '', `± ${nl0.format(Math.max(1, v.kg))} kg meenemen`));
+    li.append(maak('time', '', tijd(v.t)), wat, maak('span', 'chip', v.bezig ? (w.bak[v.b].vullen ? 'bezig' : 'nu') : over < 60 ? `over ${Math.max(1, over)} min` : `over ${nl1.format(over / 60)} u`));
+    return li;
+  }));
+  const kg = rest.reduce((s, v) => s + v.kg, 0);
+  $('plan-voet').replaceChildren('Nog ', maak('b', '', nl0.format(rest.length)), rest.length === 1 ? ' beurt' : ' beurten', ' verwacht tot sluitingstijd, samen ± ', maak('b', '', nl0.format(kg) + ' kg'), '. Al gedaan: ', maak('b', '', nl0.format(w.score.vul)), '.');
+  $('plan-ochtend').textContent = `het ochtendplan telde ${S.ochtend} ${S.ochtend === 1 ? 'beurt' : 'beurten'}, nu zijn het er ${w.score.vul + rest.length}`;
+}
+
+function werkSchermBij() {
+  const T = S.simT, met = S.zicht === 'met', w = S[S.zicht];
+  $('klok').textContent = tijd(Math.min(T, DICHT));
+  $('score-tijd').textContent = tijd(Math.min(T, DICHT));
+  $('plan').hidden = $('plan-voet').hidden = !met; $('zonder').hidden = met;
+  $('scherm-titel').textContent = met ? 'Bijvulplan' : 'Zonder GramIQ';
+  $('scherm-sub').textContent = met ? 'voor de medewerker' : 'geen meting';
+  werkPlanBij();
+  BAKKEN.forEach((p, b) => {
+    const bak = S.met.bak[b], e = kaartEl[b], pct = 100 * (bak.filt || 0) / p.cap, pr = bak.pred;
+    e.pil.textContent = STATUS[bak.status]; e.pil.className = 'pil s-' + bak.status;
+    e.vul.style.width = Math.min(100, pct) + '%'; e.vul.style.background = `var(--${bak.status === 'ok' ? 'ok' : bak.status === 'binnenkort' ? 'waarschuwing' : 'kritiek'})`;
+    e.gewicht.textContent = `${nl1.format((bak.filt || 0) / 1000)} kg · ${Math.round(pct)}% vol`;
+    e.stuks.textContent = `± ${nl0.format((bak.filt || 0) / p.stuk)} stuks`;
+    e.verbruik.textContent = `${nl0.format(bak.verbruik)} g/min`;
+    e.leeg.textContent = !pr ? 'nog te weinig data' : pr.m === null ? 'vandaag niet meer' : `${tijd(pr.om)} · ${pr.m} min`;
+    e.marge.textContent = pr && pr.m !== null && pr.m > 0 ? `${tijd(pr.vroegst)} – ${tijd(Math.min(pr.laatst, DICHT))}` : '—';
+    e.dag.textContent = `${nl1.format(bak.dagAfname / 1000)} kg (AI: ${nl1.format(S.dagData.ai[b])})`;
+  });
+  const regels = w.log.slice(-4).reverse(), log = $('log');
+  if (!regels.length) log.replaceChildren(maak('li', 'leeg', 'Nog niets gebeurd. Hier komen bijvulbeurten en lege bakken.'));
+  else log.replaceChildren(...regels.map((r) => { const li = maak('li'), s = maak('span', r.soort !== 'info' ? r.soort : '', r.tekst); li.append(maak('time', '', tijd(r.t)), s); return li; }));
+  for (const [v, ww] of [['m', S.met], ['z', S.zonder]]) {
+    $(v + '-klanten').textContent = nl0.format(ww.score.klanten);
+    $(v + '-kg').textContent = nl1.format(ww.score.kg);
+    $(v + '-leeg').textContent = nl0.format(ww.score.leegSec / 60);
+    $(v + '-vul').textContent = nl0.format(ww.score.vul);
+  }
+  $('speel').textContent = S.klaar ? 'Speel opnieuw' : S.speelt ? 'Pauze' : 'Start';
+}
+
+// ---------------------------------------------------------------- lus en bediening
+let vorige = 0, laatsteScherm = 0;
+function lus(nu) {
+  const dt = Math.min(.1, (nu - vorige) / 1000 || 0); vorige = nu;
+  if (S.speelt && !S.klaar) {
+    S.simT = Math.min(DICHT, S.simT + dt * S.snelheid * 60);
+    while (S.stapT + STAP <= S.simT) { S.stapT += STAP; stap(S.met, S.stapT, S.dagData); stap(S.zonder, S.stapT, S.dagData); }
+    while (S.met.flits.length) { S.met.flits.pop(); flitsen.push({t0: nu}); }
+    flitsen = flitsen.filter((f) => nu - f.t0 < 1400);
+    if (S.simT >= DICHT) { S.klaar = true; S.speelt = false; }
+  }
+  if (drieD) drieD.teken(nu); else tekenWinkel2D(nu);
+  if (nu - laatsteScherm > 160) { laatsteScherm = nu; werkSchermBij(); tekenGrafiek(); tekenDagplan(); }
+  requestAnimationFrame(lus);
+}
+function herstart(tot) { start($('dag').value, tot); flitsen = []; werkSchermBij(); }
+
+DATA.dagen.forEach((d) => $('dag').append(new Option(`${d.label} · ${d.soort.toLowerCase()}`, d.id)));
+$('speel').addEventListener('click', () => { if (S.klaar) { S.ronde++; herstart(OPEN); S.speelt = true; } else S.speelt = !S.speelt; werkSchermBij(); });
+$('opnieuw').addEventListener('click', () => { S.ronde++; herstart(OPEN); S.speelt = true; werkSchermBij(); });
+$('dag').addEventListener('change', () => { herstart(OPEN + 3600); S.speelt = true; });
+$('snelheid').addEventListener('change', (e) => { S.snelheid = +e.target.value; });
+$('wereld').addEventListener('change', (e) => { S.zicht = e.target.value; werkSchermBij(); });
+cv.addEventListener('click', (ev) => {
+  if (!L) return;
+  const r = cv.getBoundingClientRect(), x = ev.clientX - r.left, y = ev.clientY - r.top;
+  L.bakken.forEach((c, b) => { if (Math.abs(x - c.x) < L.bw / 2 + 8 && y > c.y - L.bh / 2 - 40 && y < c.y + L.bh / 2 + 8) kies(b); });
+});
+gv.addEventListener('pointermove', leesAf); gv.addEventListener('pointerdown', leesAf);
+dv.addEventListener('pointermove', leesDagAf); dv.addEventListener('pointerdown', leesDagAf);
+new MutationObserver(leesKleuren).observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme']});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', leesKleuren);
+
+leesKleuren();
+S.speelt = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+start(DATA.dagen[0].id, OPEN + 90 * 60);
+try { if (!window.THREE) throw new Error('three.js niet geladen'); drieD = maak3D($('winkel3d'), $('labels')); drieD.thema(); }
+catch (fout) {                                   // geen WebGL: toon de plattegrond
+  drieD = null; $('winkel3d').hidden = true; $('labels').hidden = true; cv.hidden = false;
+  $('hint').textContent = 'Deze browser kan het 3D-beeld niet tonen; je ziet de plattegrond. Klik op een bak om die weegschaal te volgen.';
+}
+kies(0);
+werkSchermBij();
+requestAnimationFrame(lus);
+</script>
+</body>
+</html>
