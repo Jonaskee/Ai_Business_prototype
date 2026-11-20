@@ -21,6 +21,14 @@ import pandas as pd
 HIER = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HIER, "..", "data")
 
+# Waar de CSV-bestanden gezocht worden, in deze volgorde:
+#   1. de map in de omgevingsvariabele GRAMIQ_DATA (optioneel)
+#   2. data/ van dit prototype
+#   3. real_data_prototype/archive (1)/: de volledige Kaggle-download zit al in de repo,
+#      dus wie de repo clonet hoeft annex2.csv (52 MB) niet zelf te downloaden of te kopiëren.
+DATA_MAPPEN = [m for m in (os.environ.get("GRAMIQ_DATA"), DATA,
+                           os.path.join(HIER, "..", "..", "archive (1)")) if m]
+
 # periodes voor training / validatie / test van de AI (nooit overlappen)
 TRAIN_TOT = "2022-07-01"   # train: 2020-07-01 .. 2022-06-30
 VAL_TOT = "2023-01-01"     # validatie: 2022-07-01 .. 2022-12-31
@@ -28,12 +36,14 @@ VAL_TOT = "2023-01-01"     # validatie: 2022-07-01 .. 2022-12-31
 
 
 def _pad(naam: str) -> str:
-    p = os.path.join(DATA, naam)
-    if not os.path.exists(p):
-        raise FileNotFoundError(
-            f"{p} ontbreekt. Download de dataset 'Supermarket Sales Data' van Kaggle "
-            f"(kaggle.com/datasets/yapwh1208/supermarket-sales-data) en zet annex1-4.csv in de map data/.")
-    return p
+    for m in DATA_MAPPEN:
+        p = os.path.join(m, naam)
+        if os.path.exists(p):
+            return p
+    raise FileNotFoundError(
+        f"{naam} niet gevonden in {', '.join(os.path.abspath(m) for m in DATA_MAPPEN)}. Download de dataset "
+        f"'Supermarket Sales Data' van Kaggle (kaggle.com/datasets/yapwh1208/supermarket-sales-data) "
+        f"en zet annex1-4.csv in de map data/.")
 
 
 @lru_cache(maxsize=1)

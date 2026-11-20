@@ -1,0 +1,21 @@
+# Python-omgeving van start.py
+.venv/
+__pycache__/
+*.pyc
+
+# Node
+node_modules/
+
+# lokale data van de prototypes
+*.db
+*.db-wal
+*.db-shm
+
+# editors en besturingssysteem
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Claude Code-werkmappen
+.claude/worktrees/

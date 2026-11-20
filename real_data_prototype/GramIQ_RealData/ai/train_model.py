@@ -137,7 +137,10 @@ def main():
     joblib.dump(pakket, os.path.join(HIER, "model_leeg.joblib"), compress=3)
     with open(os.path.join(HIER, "model_rapport.json"), "w") as f:
         json.dump(rapport, f, indent=2)
-    print("Opgeslagen: ai/model_leeg.joblib en ai/model_rapport.json")
+    # draagbare kopie: laadt met elke scikit-learn-versie (zie draagbaar_model.py)
+    from draagbaar_model import schrijf_json
+    schrijf_json(pakket, os.path.join(HIER, "model_leeg.joblib"))
+    print("Opgeslagen: ai/model_leeg.joblib, ai/model_leeg.json en ai/model_rapport.json")
 
 
 if __name__ == "__main__":

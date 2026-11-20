@@ -18,8 +18,9 @@ verkooptransacties** van een supermarkt, in plaats van uit verzonnen data.
 | `data/annex3.csv` | groothandelsprijs per product per dag |
 | `data/annex4.csv` | verliespercentage (bederf) per product |
 
-`annex2.csv` is 52 MB en staat daarom niet in git (zie `.gitignore`). Download de dataset
-en zet de vier CSV-bestanden in `data/`.
+`annex2.csv` (52 MB) staat niet nog eens in `data/`: de code vindt hem vanzelf in
+`real_data_prototype/archive (1)/`, waar de volledige download al in de repo zit. Een andere
+map kiezen kan met de omgevingsvariabele `GRAMIQ_DATA`.
 
 Wat we in de data zien:
 * open elke dag van ±9u tot 22u; drukst rond 10–11u en 16–18u, in het weekend ±40% meer;
@@ -50,24 +51,35 @@ staan niet in de data. Aanpassen kan in `ai/weegschaal_model.py` → `PRODUCTEN`
 
 ## Opstarten
 
-Python 3.10+ en Node.js nodig.
+**Snel: één commando.** Vanuit de hoofdmap van de repo: `python start.py` (of dubbelklik op
+`start.bat` op Windows, `./start.sh` op macOS/Linux). Dat installeert alles in `.venv`, start de
+MQTT-broker, de backend en de simulator, en opent het dashboard op http://127.0.0.1:8000.
+Enkel Python 3.10+ is nodig. Zie de [README in de hoofdmap](../../README.md) voor alle opties.
 
-1. **DATA**: zet `annex1.csv` t/m `annex4.csv` in `data/`.
+**Handmatig, in vier terminals** (zo draait het op de winkel-PC):
 
-2. **AI TRAINEN** (getrainde modellen zitten al in `ai/`; enkel nodig als de backend
-   "niet geladen" meldt, bv. door een andere scikit-learn-versie; getraind met 1.9.1):
+1. **DATA**: staat al in de repo (zie hierboven).
+
+2. **AI TRAINEN** (enkel als je de modellen wil vernieuwen; getrainde modellen zitten al in `ai/`):
    ```
    cd ai
    pip install -r requirements.txt
    python genereer_dataset.py   # ±9 min: 3 jaar weegschaalmetingen -> data/samples_echt.csv.gz + data/vraagprofiel.json
-   python train_model.py        # ±1 min: AI 'wanneer is de bak leeg'  -> ai/model_leeg.joblib
-   python bestelmodel.py        # ±7 min: AI 'hoeveel bestellen'       -> ai/model_bestelling.joblib
+   python train_model.py        # ±1 min: AI 'wanneer is de bak leeg'  -> ai/model_leeg.joblib + .json
+   python bestelmodel.py        # ±7 min: AI 'hoeveel bestellen'       -> ai/model_bestelling.joblib + .json
    python visualiseer.py        # optioneel: grafiek voor het verslag  -> ai/voorbeeld_voorspelling.png
    ```
    Heb je `data/samples_echt.csv.gz` al, dan kan je `genereer_dataset.py` overslaan
    wanneer je enkel opnieuw wil trainen.
 
-3. **MQTT-BROKER** (terminal 1): `docker-compose up -d`
+   **Draagbare modellen.** Een `.joblib`-bestand laadt enkel met dezelfde scikit-learn-versie als
+   waarmee getraind is (hier 1.5.1). Daarom schrijven de train-scripts ook een `.json`-versie weg
+   (`ai/draagbaar_model.py`): dezelfde bomen als gewone JSON, met exact dezelfde voorspellingen
+   (controle: `python draagbaar_model.py --controleer`), maar zonder scikit-learn en dus op elke
+   Python-versie. De backend gebruikt die JSON.
+
+3. **MQTT-BROKER** (terminal 1): `docker-compose up -d` (Mosquitto). Geen Docker?
+   `python mqtt_broker.py` start een kleine broker in pure Python, enkel bereikbaar vanaf deze computer.
 
 4. **BACKEND** (terminal 2):
    ```
@@ -76,11 +88,13 @@ Python 3.10+ en Node.js nodig.
    uvicorn main:app --reload
    ```
 
-5. **DASHBOARD** (terminal 3):
+5. **DASHBOARD**: de backend serveert de gebouwde versie (`frontend/dist`) zelf op
+   http://127.0.0.1:8000. Aan het dashboard werken (terminal 3, Node.js nodig):
    ```
    cd frontend
    npm install
-   npm run dev          # http://localhost:3000
+   npm run dev          # http://localhost:3000, met live herladen; /api gaat naar de backend
+   npm run build        # nieuwe versie in frontend/dist (start.py doet dit zelf als Node.js er is)
    ```
 
 6. **SIMULATOR** (terminal 4):
@@ -151,6 +165,18 @@ Zelfde als v2 (met de SQLite-database van issue #6/#7, `data/gramiq.db`), plus:
   `verkocht_tot_nu_kg`
 * `GET /api/bakken`, `/api/historiek/{bak}?uren=4`, `/api/metingen/{bak}`, `/api/producten`,
   `/api/weegschalen`, `/api/database`, `/api/model`
+* `GET /api/status` → MQTT verbonden?, aantal ontvangen metingen, simulatietijd, welke modellen geladen zijn
+
+**AI-lab** (zelf waarden invullen, gebruikt door het tabblad 🧪 in het dashboard):
+
+* `GET /api/lab/leeg?bak=01&kg=4&tijd=16:30&weekdag=5&drukte=1.3&bijgevuld=08:30` → wanneer is de bak
+  leeg, met marge, de simpele berekening ernaast, het verwachte verloop en wat het model als invoer zag.
+  Het verbruik volgt uit het vraagprofiel × `drukte` (1 = een gewone dag voor die weekdag).
+* `GET /api/lab/producten` → de 57 producten van het bestelmodel (de vier bakken eerst)
+* `GET /api/lab/bestelling?product=102900005116714&datum=2023-06-01` → bestelvoorstel voor die dag,
+  wat er echt verkocht werd, de fout, of de dag in de testperiode valt, en de vier weken ervoor
+
+Alle routes zijn uit te proberen op http://127.0.0.1:8000/docs.
 
 ## Mappen
 
@@ -158,6 +184,7 @@ Zelfde als v2 (met de SQLite-database van issue #6/#7, `data/gramiq.db`), plus:
 |---|---|
 | `ai/` | `echte_data.py` (inlezen), weegschaalmodel, features + vraagprofiel, datasetgenerator, beide modellen |
 | `simulator/` | speelt echte verkopen af als weegschaalmetingen over MQTT |
-| `backend/` | FastAPI + SQLite: metingen ontvangen, filteren, bewaren, voorspellen |
-| `frontend/` | React-dashboard (bakken, grafiek, bestelvoorstel) |
+| `backend/` | FastAPI + SQLite: metingen ontvangen, filteren, bewaren, voorspellen; serveert ook het dashboard |
+| `frontend/` | React-dashboard (bakken, grafiek, bestelvoorstel, AI-lab); `dist/` is de gebouwde versie |
+| `mqtt_broker.py` | mini MQTT-broker in pure Python, voor wie geen Docker/Mosquitto heeft |
 | `data/` | dataset + gegenereerde bestanden |

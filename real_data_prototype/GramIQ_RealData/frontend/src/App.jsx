@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import AiLab from './AiLab.jsx';
 
-const API = 'http://localhost:8000';
+// Leeg = hetzelfde adres als het dashboard (de backend serveert het, of de Vite-proxy bij npm run dev).
+// Een andere backend kiezen kan met VITE_API_URL, bv. VITE_API_URL=http://192.168.0.10:8000 npm run dev
+const API = import.meta.env.VITE_API_URL || '';
 
 const STATUS = {
   ok:      { kleur: '#27ae60', label: 'In orde' },
@@ -148,12 +151,44 @@ function BestelPaneel({ data }) {
   );
 }
 
+const WEEKDAG_KORT = ['zo', 'ma', 'di', 'wo', 'do', 'vr', 'za'];
+
+function StatusBalk({ status }) {
+  if (status === undefined) return <div className="statusbalk">Verbinden met de backend …</div>;
+  if (!status) return <div className="statusbalk"><span className="stip rood" />Backend niet bereikbaar. Draait start.py nog?</div>;
+  const m = status.mqtt || {};
+  const t = status.simulatietijd ? new Date(status.simulatietijd.replace(' ', 'T')) : null;
+  return (
+    <div className="statusbalk">
+      <span><span className={`stip ${m.verbonden ? 'groen' : 'rood'}`} />MQTT {m.verbonden ? 'verbonden' : 'niet verbonden'}</span>
+      <span>📡 {new Intl.NumberFormat('nl-BE').format(m.berichten || 0)} metingen ontvangen</span>
+      <span>🕐 {t ? `winkeltijd ${WEEKDAG_KORT[t.getDay()]} ${t.toLocaleDateString('nl-BE')} ${t.toTimeString().slice(0, 5)}` : 'wachten op de simulator …'}</span>
+      <span>🤖 {status.ai_model ? 'AI-model geladen' : 'geen AI-model (baseline)'}</span>
+    </div>
+  );
+}
+
 function App() {
   const [bakken, setBakken] = useState({});
   const [geselecteerd, setGeselecteerd] = useState('01');
   const [history, setHistory] = useState([]);
   const [model, setModel] = useState(null);
   const [bestelling, setBestelling] = useState(null);
+  const [status, setStatus] = useState(undefined);
+  const [tab, setTab] = useState(window.location.hash === '#lab' ? 'lab' : 'live');
+
+  useEffect(() => {
+    const kies = () => setTab(window.location.hash === '#lab' ? 'lab' : 'live');
+    window.addEventListener('hashchange', kies);
+    return () => window.removeEventListener('hashchange', kies);
+  }, []);
+
+  useEffect(() => {
+    const haal = () => fetch(`${API}/api/status`).then(r => r.json()).then(setStatus).catch(() => setStatus(null));
+    haal();
+    const i = setInterval(haal, 2000);
+    return () => clearInterval(i);
+  }, []);
 
   useEffect(() => {
     const haal = () => fetch(`${API}/api/bestelling`).then(r => r.json()).then(setBestelling).catch(() => {});
@@ -186,19 +221,26 @@ function App() {
   const test = model?.rapport?.['Test (jan-jun 2023)'];
 
   return (
-    <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto' }}>
-      <header style={{ marginBottom: '40px', borderBottom: '2px solid #ddd', paddingBottom: '20px' }}>
+    <div className="pagina" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      <header style={{ marginBottom: '30px', borderBottom: '2px solid #ddd', paddingBottom: '0' }}>
         <h1 style={{ margin: 0, color: '#2c3e50' }}>⚖️ GramIQ Live Dashboard · echte verkoopdata</h1>
         <p style={{ margin: '5px 0 0 0', color: '#7f8c8d' }}>
           Weegschalen onder 4 groentebakken, gevoed met echte verkopen van een supermarkt (2020–2023) ·
           AI-voorspelling wanneer elke bak leeg is · bestelvoorstel per dag
         </p>
+        <StatusBalk status={status} />
+        <nav className="tabs" aria-label="Onderdelen">
+          <a href="#live" aria-current={tab === 'live' ? 'page' : undefined}>📡 Live winkel</a>
+          <a href="#lab" aria-current={tab === 'lab' ? 'page' : undefined}>🧪 AI-lab: probeer zelf</a>
+        </nav>
       </header>
+
+      {tab === 'lab' ? <AiLab api={API} /> : <>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px', marginBottom: '40px' }}>
         {Object.keys(bakken).length === 0 ? (
           <div style={{ padding: '20px', backgroundColor: '#fff', borderRadius: '8px', borderLeft: '5px solid #f39c12' }}>
-            Wachten op data... Zorg dat de backend en simulator draaien.
+            Wachten op metingen van de simulator… Die start een paar seconden na de backend. Probeer intussen het 🧪 AI-lab.
           </div>
         ) : (
           Object.entries(bakken).map(([id, info]) => (
@@ -242,6 +284,7 @@ function App() {
           )}
         </div>
       )}
+      </>}
     </div>
   );
 }

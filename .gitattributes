@@ -1,0 +1,4 @@
+# start.bat moet Windows-regeleindes hebben, start.sh Unix-regeleindes (anders werkt het script niet)
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.sh  text eol=lf

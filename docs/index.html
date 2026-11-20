@@ -54,7 +54,8 @@ h3 { font-family: var(--tekst); font-weight: 600; font-size: 14px; }
 .knop.stil { background: transparent; color: var(--inkt); border-color: var(--lijn); min-width: 0; }
 .knop:hover { opacity: .88; }
 .knop:focus-visible, .kaart:focus-visible, select:focus-visible, .keuze input:focus-visible + label, summary:focus-visible { outline: 2px solid var(--signaal); outline-offset: 2px; }
-.veld { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--inkt-2); }
+.veld { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--inkt-2); min-width: 0; max-width: 100%; }
+.veld select { min-width: 0; flex: 1 1 auto; text-overflow: ellipsis; }
 select { font: 14px var(--tekst); color: var(--inkt); background: var(--paneel); border: 1px solid var(--lijn); border-radius: 6px; padding: 6px 8px; max-width: 100%; }
 .keuze { display: inline-flex; border: 1px solid var(--lijn); border-radius: 6px; padding: 0; margin: 0; overflow: hidden; background: var(--paneel); }
 .keuze legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
@@ -151,6 +152,45 @@ select { font: 14px var(--tekst); color: var(--inkt); background: var(--paneel);
 details { border-top: 1px solid var(--lijn); padding-top: 12px; color: var(--inkt-2); }
 summary { cursor: pointer; color: var(--inkt); font-weight: 600; }
 details ul { padding-left: 18px; margin-top: 8px; max-width: 76ch; display: flex; flex-direction: column; gap: 4px; }
+
+/* spel: jij bent de medewerker */
+.kop-acties { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+.knop.groot { font-size: 15px; padding: 10px 18px; border-radius: 8px; }
+.knop.accent { background: var(--signaal); border-color: var(--signaal); color: #fff; }
+.knop:disabled { opacity: .45; cursor: default; }
+.spel { display: flex; flex-direction: column; gap: 14px; padding: 16px 18px; border: 1.5px solid var(--signaal); border-radius: 12px; background: var(--signaal-zacht); }
+.spel-kop { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 24px; }
+.spel-kop .uitleg { max-width: 70ch; margin-top: 4px; }
+.spel-opties { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+kbd { font-family: var(--cijfer); font-size: 12px; padding: 1px 6px; border: 1px solid var(--lijn); border-bottom-width: 2px; border-radius: 4px; background: var(--paneel); color: var(--inkt); }
+.vulknoppen { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 720px) { .vulknoppen { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.vulknop { all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 8px; align-items: center; padding: 10px 12px; border-radius: 10px; background: var(--paneel); border: 2px solid var(--lijn); min-width: 0; }
+.vulknop:hover { border-color: var(--signaal); }
+.vulknop:focus-visible { outline: 2px solid var(--signaal); outline-offset: 2px; }
+.vulknop .vk-toets { grid-row: span 2; font-family: var(--cijfer); font-size: 13px; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 6px; background: var(--tegel); color: var(--inkt-2); }
+.vulknop .vk-naam { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vulknop .vk-info { font-family: var(--cijfer); font-size: 12px; color: var(--inkt-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vulknop .balk { grid-column: 1 / -1; }
+.vulknop .vk-actie { grid-column: 1 / -1; font-size: 12.5px; font-weight: 600; color: var(--signaal); }
+.vulknop.bezig { border-style: dashed; cursor: progress; }
+.vulknop.bezig .vk-actie { color: var(--inkt-2); }
+.spel-stand { font-size: 13.5px; color: var(--inkt-2); }
+.spel-stand b { color: var(--inkt); font-family: var(--cijfer); font-weight: 500; }
+.jouw { display: flex; flex-direction: column; gap: 6px; min-height: 252px; }
+.jouw ol { list-style: none; padding: 0; display: flex; flex-direction: column; }
+.jouw li { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid var(--lijn); font-size: 14px; }
+.jouw li b { font-weight: 600; }
+.jouw li span { color: var(--inkt-2); font-family: var(--cijfer); font-size: 12.5px; white-space: nowrap; }
+.jouw .wacht { color: var(--inkt-2); font-size: 13.5px; }
+.score th.jij, .score td.jij { color: var(--signaal); }
+.melding-spel { min-height: 1.4em; font-size: 13px; color: var(--waarschuwing); }
+dialog.uitslag { border: 1px solid var(--lijn); border-radius: 14px; padding: 24px; width: min(560px, calc(100vw - 32px)); box-sizing: border-box; background: var(--paneel); color: var(--inkt); }
+dialog.uitslag::backdrop { background: rgb(10 20 15 / .5); }
+dialog.uitslag form { display: flex; flex-direction: column; gap: 14px; }
+dialog.uitslag h2 { font-size: 26px; }
+.uitslag-knoppen { display: flex; flex-wrap: wrap; gap: 8px; }
+.score td .beker { font-size: 14px; margin-left: 4px; }
 </style>
 
 </head>
@@ -160,6 +200,9 @@ details ul { padding-left: 18px; margin-top: 8px; max-width: 76ch; display: flex
     <p class="merk">GramIQ</p>
     <h1>Een weegschaal onder elke groentebak</h1>
     <p class="intro">De winkel weet hoeveel er nog ligt en wanneer een bak leeg raakt. De AI maakt er een bijvulplan van, zodat de medewerker weet welke bak wanneer aan de beurt is. Hieronder loopt een echte verkoopdag uit de dataset, twee keer tegelijk: één winkel met GramIQ en één zonder.</p>
+    <div class="kop-acties">
+      <button class="knop groot accent" id="speel-zelf" type="button">🎮 Speel zelf: kun jij de AI verslaan?</button>
+    </div>
   </header>
 
   <section class="bediening" aria-label="Bediening van de simulatie">
@@ -178,8 +221,31 @@ details ul { padding-left: 18px; margin-top: 8px; max-width: 76ch; display: flex
       <legend>Welke winkel je ziet</legend>
       <input type="radio" name="wereld" id="wMet" value="met" checked><label for="wMet">Met GramIQ</label>
       <input type="radio" name="wereld" id="wZonder" value="zonder"><label for="wZonder">Zonder GramIQ</label>
+      <input type="radio" name="wereld" id="wJij" value="jij" hidden><label for="wJij" id="wJij-label" hidden>Jij</label>
     </fieldset>
     <button class="knop stil" id="opnieuw" type="button">Opnieuw</button>
+  </section>
+
+  <section class="spel" id="spel" hidden aria-label="Spel: jij bent de medewerker">
+    <div class="spel-kop">
+      <div>
+        <p class="merk">Spel · jij bent de medewerker</p>
+        <h2>Vul de bakken op tijd bij</h2>
+        <p class="uitleg">Dezelfde klanten als in de echte winkel. Klik op een bak, op een knop hieronder of druk <kbd>1</kbd>–<kbd>4</kbd>: de medewerker haalt een krat in het magazijn en vult die bak bij. Er is maar één medewerker, dus kies slim. Om 22u zie je of je het beter deed dan de AI.</p>
+      </div>
+      <div class="spel-opties">
+        <label class="veld" for="blind">Wat zie je
+          <select id="blind">
+            <option value="0">Weegschalen en voorspelling</option>
+            <option value="1">Alleen de winkel (blind)</option>
+          </select>
+        </label>
+        <button class="knop stil" id="stop-spel" type="button">Stop het spel</button>
+      </div>
+    </div>
+    <div class="vulknoppen" id="vulknoppen"></div>
+    <p class="melding-spel" id="melding-spel" aria-live="polite"></p>
+    <p class="spel-stand" id="spel-stand"></p>
   </section>
 
   <section class="toneel">
@@ -205,6 +271,10 @@ details ul { padding-left: 18px; margin-top: 8px; max-width: 76ch; display: flex
         <strong>Geen weegschaal, geen plan</strong>
         <span>Niemand weet hoeveel er in een bak ligt. Het personeel merkt een bijna lege bak pas op als iemand langsloopt, en vult dan bij wanneer er tijd is.</span>
       </div>
+      <div class="jouw" id="jouw" hidden>
+        <ol id="jouw-lijst"></ol>
+        <p class="wacht" id="jouw-wacht"></p>
+      </div>
       <h3 id="log-titel">Logboek</h3>
       <ul class="log" id="log"></ul>
     </aside>
@@ -213,6 +283,7 @@ details ul { padding-left: 18px; margin-top: 8px; max-width: 76ch; display: flex
   <section class="blok" id="dashboard">
     <div class="scherm-kop"><h2>Dashboard op de winkel-PC</h2><span>live per weegschaal</span></div>
     <div class="kaarten" id="kaarten"></div>
+    <p class="zonder" id="kaarten-blind" hidden><strong>Blind gespeeld</strong><span>Zonder weegschaal zie je enkel wat er in de winkel ligt. Kijk goed naar de bakken in 3D.</span></p>
   </section>
 
   <section class="blok" id="dagplan-blok">
@@ -235,12 +306,12 @@ details ul { padding-left: 18px; margin-top: 8px; max-width: 76ch; display: flex
     <p class="uitleg">Beide winkels krijgen exact dezelfde aankopen op dezelfde momenten. Zonder GramIQ merkt het personeel een bijna lege bak toevallig op en komt het meestal 5 tot 25 minuten later. Met GramIQ volgt één medewerker het bijvulplan en begint die binnen 1 tot 4 minuten nadat een bak aan de beurt is. Dat laatste is een aanname en weegt zwaar door in de stand.</p>
     <div class="score-doos">
       <table class="score">
-        <thead><tr><th scope="col">Stand om <span id="score-tijd">09:00</span></th><th scope="col" class="met">Met GramIQ</th><th scope="col">Zonder GramIQ</th></tr></thead>
+        <thead><tr><th scope="col">Stand om <span id="score-tijd">09:00</span></th><th scope="col" class="jij" hidden>Jij</th><th scope="col" class="met">Met GramIQ</th><th scope="col">Zonder GramIQ</th></tr></thead>
         <tbody>
-          <tr><th scope="row">Klanten die niet alles vonden</th><td id="m-klanten">0</td><td id="z-klanten">0</td></tr>
-          <tr><th scope="row">Gemiste verkoop (kg)</th><td id="m-kg">0</td><td id="z-kg">0</td></tr>
-          <tr><th scope="row">Minuten met een lege bak</th><td id="m-leeg">0</td><td id="z-leeg">0</td></tr>
-          <tr><th scope="row">Bijvulbeurten</th><td id="m-vul">0</td><td id="z-vul">0</td></tr>
+          <tr><th scope="row">Klanten die niet alles vonden</th><td id="j-klanten" class="jij" hidden>0</td><td id="m-klanten">0</td><td id="z-klanten">0</td></tr>
+          <tr><th scope="row">Gemiste verkoop (kg)</th><td id="j-kg" class="jij" hidden>0</td><td id="m-kg">0</td><td id="z-kg">0</td></tr>
+          <tr><th scope="row">Minuten met een lege bak</th><td id="j-leeg" class="jij" hidden>0</td><td id="m-leeg">0</td><td id="z-leeg">0</td></tr>
+          <tr><th scope="row">Bijvulbeurten</th><td id="j-vul" class="jij" hidden>0</td><td id="m-vul">0</td><td id="z-vul">0</td></tr>
         </tbody>
       </table>
     </div>
@@ -285,9 +356,30 @@ details ul { padding-left: 18px; margin-top: 8px; max-width: 76ch; display: flex
       <li>De voorspelling hier is een vereenvoudigde versie die in de browser draait: het vraagprofiel per uur maal de drukte van het laatste uur. Het prototype gebruikt het getrainde model. De foutmarge gebruikt de factoren uit het modelrapport.</li>
       <li>De reactietijd van het personeel is toeval. Met “Opnieuw” krijg je dezelfde klanten met andere reactietijden, dus de stand verschilt per keer.</li>
       <li>De weegschaal zelf is gesimuleerd. Met echte weegschalen is nog niet getest.</li>
+      <li>In het spel loopt de medewerker 1 tot 2,5 minuten naar het magazijn en terug, ongeveer even snel als met het plan. Wie wint: de minste klanten die niet alles vonden, bij gelijkstand de minste bijvulbeurten.</li>
     </ul>
   </details>
 </div>
+
+<dialog class="uitslag" id="uitslag" aria-labelledby="uitslag-titel">
+  <form method="dialog">
+    <p class="merk" id="uitslag-merk">Einde van de dag · 22:00</p>
+    <h2 id="uitslag-titel">—</h2>
+    <p class="uitleg" id="uitslag-tekst"></p>
+    <div class="score-doos">
+      <table class="score">
+        <thead><tr><th scope="col">Om 22:00</th><th scope="col" class="jij">Jij</th><th scope="col" class="met">GramIQ-AI</th><th scope="col">Zonder</th></tr></thead>
+        <tbody id="uitslag-tabel"></tbody>
+      </table>
+    </div>
+    <div class="uitslag-knoppen">
+      <button class="knop accent" value="nog" type="submit">Nog eens</button>
+      <button class="knop stil" value="dag" type="submit">Andere dag</button>
+      <button class="knop stil" value="deel" type="button" id="deel">Kopieer je score</button>
+      <button class="knop stil" value="stop" type="submit">Stoppen</button>
+    </div>
+  </form>
+</dialog>
 
 <script src="three.min.js"></script>
 <script>
@@ -434,8 +526,8 @@ function stap(w, t, dag) {
     }
     if (e.t > bak.grijpTot) bak.grijpA = uni(w.rng, 30, 300);
     bak.grijpTot = e.t + STAP;
-    // zonder GramIQ: iemand merkt de bijna lege bak op en komt later bijvullen
-    if (!w.met && bak.gepland === null && !bak.vullen && bak.w < p.cap * bak.drempel && e.t > bak.bezigTot) {
+    // zonder GramIQ: iemand merkt de bijna lege bak op en komt later bijvullen (in het spel beslis jij)
+    if (!w.met && !w.speler && bak.gepland === null && !bak.vullen && bak.w < p.cap * bak.drempel && e.t > bak.bezigTot) {
       stuur(w, bak, e.bak, e.t + reactietijd(w.rng));
       bak.drempel = uni(w.rng, .12, .30);
     }
@@ -500,8 +592,13 @@ const $ = (id) => document.getElementById(id);
 const nl1 = new Intl.NumberFormat('nl-BE', {minimumFractionDigits: 1, maximumFractionDigits: 1});
 const nl0 = new Intl.NumberFormat('nl-BE', {maximumFractionDigits: 0});
 const STATUS = {ok: 'In orde', binnenkort: 'Binnenkort bijvullen', nu: 'Nu bijvullen!', leeg: 'LEEG'};
-const S = {dag: null, dagData: null, met: null, zonder: null, simT: OPEN, stapT: OPEN, speelt: true, snelheid: 3, zicht: 'met', gekozen: 0, ronde: 0, klaar: false, ochtend: 0};
+const S = {dag: null, dagData: null, met: null, zonder: null, jij: null, simT: OPEN, stapT: OPEN, speelt: true, snelheid: 3, zicht: 'met', gekozen: 0, ronde: 0, klaar: false, ochtend: 0,
+  spel: false, blind: false, uitslag: false};
 let K = {}, L = null, flitsen = [], drieD = null;
+// Toont de gekozen winkel de metingen van de weegschalen? (in het spel niet als je blind speelt)
+const zietData = () => S.zicht === 'met' || (S.zicht === 'jij' && !S.blind);
+// Welke winkel de kaarten en de grafiek van één weegschaal tonen
+const bron = () => (S.zicht === 'jij' && S.jij && !S.blind ? S.jij : S.met);
 
 function leesKleuren() {
   const cs = getComputedStyle(document.documentElement), k = (n) => cs.getPropertyValue(n).trim();
@@ -517,10 +614,11 @@ function start(dagId, tot) {
   const seed = 7 + S.ronde * 101;
   S.met = maakWereld(true, seed);
   S.zonder = maakWereld(false, seed);
-  S.simT = S.stapT = OPEN; S.klaar = false;
+  S.jij = maakWereld(false, seed); S.jij.speler = true;   // het spel: zelfde klanten, jij stuurt de medewerker
+  S.simT = S.stapT = OPEN; S.klaar = false; S.uitslag = false;
   maakPlan(S.met, OPEN, S.dagData);            // het ochtendplan: alleen de dagvoorspelling, nog geen metingen
   S.ochtend = S.met.plan.length;
-  while (S.stapT < tot) { S.stapT += STAP; stap(S.met, S.stapT, S.dagData); stap(S.zonder, S.stapT, S.dagData); }
+  while (S.stapT < tot) { S.stapT += STAP; stap(S.met, S.stapT, S.dagData); stap(S.zonder, S.stapT, S.dagData); if (S.spel) stap(S.jij, S.stapT, S.dagData); }
   S.simT = S.stapT;
   S.met.flits.length = 0;
 }
@@ -667,7 +765,7 @@ function maak3D(canvas, labelDoos) {
       const r = canvas.getBoundingClientRect(), straal = new T3.Raycaster();
       straal.setFromCamera({x: (e.clientX - r.left) / r.width * 2 - 1, y: -(e.clientY - r.top) / r.height * 2 + 1}, cam);
       const raak = straal.intersectObjects(bakken.map((k) => k.g), true).find((h) => h.object.userData.bak !== undefined);
-      if (raak) kies(raak.object.userData.bak);
+      if (raak) { const b = raak.object.userData.bak; if (S.spel && S.zicht === 'jij') vulBij(b); kies(b); }
     }
     sleep = null;
   };
@@ -691,7 +789,7 @@ function maak3D(canvas, labelDoos) {
     const afstand = 24.5 * Math.max(1, 1.66 / cam.aspect), doel = {x: -.9, y: .9, z: .4};
     cam.position.set(doel.x + afstand * Math.sin(kijk.kantel) * Math.sin(kijk.hoek), doel.y + afstand * Math.cos(kijk.kantel), doel.z + afstand * Math.sin(kijk.kantel) * Math.cos(kijk.hoek));
     cam.lookAt(doel.x, doel.y, doel.z);
-    const w = S[S.zicht], met = S.zicht === 'met', T = S.simT;
+    const w = S[S.zicht], met = zietData(), T = S.simT;
     pc.visible = data.visible = met;
     BAKKEN.forEach((p, b) => {
       const k = bakken[b], bak = w.bak[b];
@@ -723,7 +821,7 @@ function maak3D(canvas, labelDoos) {
       f.g.visible = true; f.g.position.set(q.x, 0, q.y); f.tas.visible = f.mis.visible = false; f.krat.visible = q.krat;
     }
     for (; m < personeel.length; m++) personeel[m].g.visible = false;
-    const flits = met && flitsen.length ? 1 - (nu - flitsen[flitsen.length - 1].t0) / 1400 : 0;
+    const eigen = flitsen.filter((f) => f.w === S.zicht), flits = eigen.length ? 1 - (nu - eigen[eigen.length - 1].t0) / 1400 : 0;
     ring.visible = flits > 0;
     if (flits > 0) { ring.material.opacity = flits; ring.scale.setScalar(1 + (1 - flits) * 1.6); }
     renderer.render(scene, cam);
@@ -766,7 +864,7 @@ function tekenGroente(ctx, soort, x, y, r, hoek) {
 function tekenWinkel2D(nu) {
   const [W, H] = pasCanvas(cv, cx, (w) => maakLayout(w).H);
   if (!L || L.W !== W) L = maakLayout(W);
-  const w = S[S.zicht], met = S.zicht === 'met', T = S.simT, ctx = cx;
+  const w = S[S.zicht], met = zietData(), T = S.simT, ctx = cx;
   ctx.clearRect(0, 0, W, H);
   ctx.fillStyle = K.tegel; ctx.fillRect(0, 0, W, L.muur);
   ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
@@ -813,7 +911,7 @@ function tekenWinkel2D(nu) {
 // ---------------------------------------------------------------- grafiek van één weegschaal
 let grafiekMaat = null, dagMaat = null;
 function tekenGrafiek() {
-  const [W, H] = pasCanvas(gv, gx, (w) => w < 440 ? 210 : 250), ctx = gx, p = BAKKEN[S.gekozen], bak = S.met.bak[S.gekozen], T = S.simT;
+  const [W, H] = pasCanvas(gv, gx, (w) => w < 440 ? 210 : 250), ctx = gx, p = BAKKEN[S.gekozen], bak = bron().bak[S.gekozen], T = S.simT;
   const ml = 44, mr = 14, mt = 12, mb = 26, t0 = Math.max(OPEN, T - 150 * 60), t1 = Math.min(DICHT, Math.max(T + 60 * 60, t0 + 210 * 60)), ymax = p.cap * 1.08;
   const x = (t) => ml + (t - t0) / (t1 - t0) * (W - ml - mr), y = (g) => mt + (1 - g / ymax) * (H - mt - mb);
   grafiekMaat = {t0, t1, ml, mr, W};
@@ -846,7 +944,7 @@ function tekenGrafiek() {
 function leesAf(ev) {
   if (!grafiekMaat) return;
   const r = gv.getBoundingClientRect(), g = grafiekMaat, t = g.t0 + (ev.clientX - r.left - g.ml) / (g.W - g.ml - g.mr) * (g.t1 - g.t0);
-  const h = S.met.bak[S.gekozen].hist;
+  const h = bron().bak[S.gekozen].hist;
   if (!h.length || t > h[h.length - 1].t + 60 || t < h[0].t - 60) { $('aflezing').textContent = 'Beweeg over de grafiek om een meting af te lezen.'; return; }
   let best = h[0]; for (const m of h) if (Math.abs(m.t - t) < Math.abs(best.t - t)) best = m;
   $('aflezing').textContent = `${tijd(best.t)} · gefilterd ${nl1.format(best.f / 1000)} kg · ruw ${nl1.format(best.r / 1000)} kg`;
@@ -932,15 +1030,18 @@ function werkPlanBij() {
 }
 
 function werkSchermBij() {
-  const T = S.simT, met = S.zicht === 'met', w = S[S.zicht];
+  const T = S.simT, met = S.zicht === 'met', jij = S.zicht === 'jij', w = S[S.zicht];
   $('klok').textContent = tijd(Math.min(T, DICHT));
   $('score-tijd').textContent = tijd(Math.min(T, DICHT));
-  $('plan').hidden = $('plan-voet').hidden = !met; $('zonder').hidden = met;
-  $('scherm-titel').textContent = met ? 'Bijvulplan' : 'Zonder GramIQ';
-  $('scherm-sub').textContent = met ? 'voor de medewerker' : 'geen meting';
+  $('plan').hidden = $('plan-voet').hidden = !met; $('zonder').hidden = S.zicht !== 'zonder'; $('jouw').hidden = !jij;
+  $('scherm-titel').textContent = met ? 'Bijvulplan' : jij ? 'Jouw opdrachten' : 'Zonder GramIQ';
+  $('scherm-sub').textContent = met ? 'voor de medewerker' : jij ? (S.blind ? 'blind: geen weegschaal' : 'jij beslist') : 'geen meting';
   werkPlanBij();
+  if (S.spel) werkSpelBij();
+  $('kaarten').hidden = jij && S.blind; $('kaarten-blind').hidden = !(jij && S.blind);
+  const bw = bron();
   BAKKEN.forEach((p, b) => {
-    const bak = S.met.bak[b], e = kaartEl[b], pct = 100 * (bak.filt || 0) / p.cap, pr = bak.pred;
+    const bak = bw.bak[b], e = kaartEl[b], pct = 100 * (bak.filt || 0) / p.cap, pr = bak.pred;
     e.pil.textContent = STATUS[bak.status]; e.pil.className = 'pil s-' + bak.status;
     e.vul.style.width = Math.min(100, pct) + '%'; e.vul.style.background = `var(--${bak.status === 'ok' ? 'ok' : bak.status === 'binnenkort' ? 'waarschuwing' : 'kritiek'})`;
     e.gewicht.textContent = `${nl1.format((bak.filt || 0) / 1000)} kg · ${Math.round(pct)}% vol`;
@@ -953,7 +1054,8 @@ function werkSchermBij() {
   const regels = w.log.slice(-4).reverse(), log = $('log');
   if (!regels.length) log.replaceChildren(maak('li', 'leeg', 'Nog niets gebeurd. Hier komen bijvulbeurten en lege bakken.'));
   else log.replaceChildren(...regels.map((r) => { const li = maak('li'), s = maak('span', r.soort !== 'info' ? r.soort : '', r.tekst); li.append(maak('time', '', tijd(r.t)), s); return li; }));
-  for (const [v, ww] of [['m', S.met], ['z', S.zonder]]) {
+  document.querySelectorAll('.score .jij').forEach((e) => { if (!e.closest('dialog')) e.hidden = !S.spel; });
+  for (const [v, ww] of [['m', S.met], ['z', S.zonder], ...(S.spel ? [['j', S.jij]] : [])]) {
     $(v + '-klanten').textContent = nl0.format(ww.score.klanten);
     $(v + '-kg').textContent = nl1.format(ww.score.kg);
     $(v + '-leeg').textContent = nl0.format(ww.score.leegSec / 60);
@@ -962,16 +1064,121 @@ function werkSchermBij() {
   $('speel').textContent = S.klaar ? 'Speel opnieuw' : S.speelt ? 'Pauze' : 'Start';
 }
 
+// ---------------------------------------------------------------- het spel: jij bent de medewerker
+// Een derde winkel met exact dezelfde klanten. Niemand vult vanzelf bij: jij stuurt de medewerker.
+let hintNormaal = '', meldingKlok = 0;
+const vulEl = BAKKEN.map((p, b) => {
+  const k = maak('button', 'vulknop'); k.type = 'button';
+  const info = maak('span', 'vk-info', '—'), balk = maak('span', 'balk'), vul = maak('i'), actie = maak('span', 'vk-actie', 'Vul bij');
+  balk.append(vul);
+  k.append(maak('span', 'vk-toets', String(b + 1)), maak('span', 'vk-naam', p.naam), info, balk, actie);
+  k.addEventListener('click', () => { vulBij(b); kies(b); });
+  $('vulknoppen').append(k);
+  return {k, info, vul, actie};
+});
+
+function meldSpel(tekst) {
+  $('melding-spel').textContent = tekst;
+  clearTimeout(meldingKlok); meldingKlok = setTimeout(() => { $('melding-spel').textContent = ''; }, 4500);
+}
+
+function vulBij(b) {
+  if (!S.spel) return;
+  if (S.klaar) { meldSpel('De winkel is dicht. Speel opnieuw voor een nieuwe dag.'); return; }
+  const w = S.jij, bak = w.bak[b], p = BAKKEN[b], t = S.stapT;
+  if (bak.gepland !== null || bak.vullen) { meldSpel(`De medewerker is al met de ${p.naam.toLowerCase()} bezig.`); return; }
+  if (t >= DICHT - 300) { meldSpel('Te laat: de winkel gaat zo dicht.'); return; }
+  const wanneer = Math.max(t + uni(w.rng, 60, 150), w.bezetTot + 30);   // naar het magazijn en terug met een krat
+  stuur(w, bak, b, wanneer);
+  w.bezetTot = wanneer + 90 + Math.max(0, p.cap - bak.w) / 3150 * 30;   // ± 30 s per krat van ± 3 kg
+  w.log.push({t, soort: 'melding', tekst: `Jij: bak ${p.id} ${p.naam} bijvullen`});
+  flitsen.push({t0: performance.now(), w: 'jij'});
+  meldSpel(wanneer - t > 200 ? `Genoteerd. De medewerker is nog bezig en begint rond ${tijd(wanneer)} aan de ${p.naam.toLowerCase()}.`
+    : `De medewerker haalt een krat ${p.naam.toLowerCase()} in het magazijn.`);
+  werkSchermBij();
+}
+
+function werkSpelBij() {
+  const w = S.jij, T = S.simT, data = !S.blind;
+  BAKKEN.forEach((p, b) => {
+    const bak = w.bak[b], e = vulEl[b], pct = 100 * (bak.filt || 0) / p.cap, bezig = bak.gepland !== null || !!bak.vullen;
+    const kleur = `var(--${bak.status === 'ok' ? 'ok' : bak.status === 'binnenkort' ? 'waarschuwing' : 'kritiek'})`;
+    e.k.classList.toggle('bezig', bezig);
+    e.k.style.borderColor = data && !bezig && bak.status !== 'ok' ? kleur : '';
+    const leeg = data && bak.pred && bak.pred.m !== null && bak.pred.m < 120 ? ` · leeg ± ${tijd(bak.pred.om)}` : '';
+    e.info.textContent = data ? `${nl1.format((bak.filt || 0) / 1000)} kg · ${Math.round(pct)}%${leeg}` : 'geen weegschaal';
+    e.vul.style.width = data ? Math.min(100, pct) + '%' : '0%'; e.vul.style.background = kleur;
+    e.actie.textContent = bak.vullen ? 'Wordt bijgevuld …' : bezig ? `Medewerker komt ± ${tijd(bak.gepland)}` : 'Vul bij';
+    e.k.setAttribute('aria-label', `${p.naam} bijvullen (toets ${b + 1})`);
+  });
+  const open = BAKKEN.map((p, b) => ({p, bak: w.bak[b]})).filter((x) => x.bak.gepland !== null || x.bak.vullen)
+    .sort((x, y) => (x.bak.vullen ? -1 : x.bak.gepland) - (y.bak.vullen ? -1 : y.bak.gepland));
+  $('jouw-lijst').replaceChildren(...open.map(({p, bak}) => {
+    const li = maak('li'); li.append(maak('b', '', `Bak ${p.id} · ${p.naam}`), maak('span', '', bak.vullen ? 'bezig' : `start ± ${tijd(bak.gepland)}`)); return li;
+  }));
+  $('jouw-wacht').textContent = open.length ? '' : S.klaar ? 'De winkel is dicht.' : 'De medewerker wacht op jouw opdracht. Klik op een bak of druk 1–4.';
+  const j = w.score, a = S.met.score, z = S.zonder.score, B = (x) => maak('b', '', nl0.format(x));
+  $('spel-stand').replaceChildren('Stand om ', maak('b', '', tijd(Math.min(T, DICHT))), ' · klanten die niet alles vonden: jij ', B(j.klanten), ', AI ', B(a.klanten),
+    ', zonder GramIQ ', B(z.klanten), ' · bijvulbeurten: jij ', B(j.vul), ', AI ', B(a.vul));
+}
+
+function startSpel() {
+  S.spel = true; S.blind = $('blind').value === '1'; S.zicht = 'jij'; S.ronde++;
+  $('wJij').hidden = $('wJij-label').hidden = false; $('wJij').checked = true;
+  $('spel').hidden = false; $('speel-zelf').textContent = '🎮 Opnieuw beginnen';
+  $('hint').textContent = 'Klik op een bak of druk 1–4 om de medewerker te sturen. Sleep om de winkel te draaien.';
+  herstart(OPEN); S.speelt = true;
+  werkSchermBij();
+  $('spel').scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start'});
+}
+
+function stopSpel() {
+  S.spel = false; S.zicht = 'met'; $('wMet').checked = true;
+  $('wJij').hidden = $('wJij-label').hidden = true; $('spel').hidden = true;
+  $('speel-zelf').textContent = '🎮 Speel zelf: kun jij de AI verslaan?';
+  $('hint').textContent = hintNormaal;
+  werkSchermBij();
+}
+
+function toonUitslag() {
+  S.uitslag = true;
+  const j = S.jij.score, a = S.met.score, z = S.zonder.score, rang = (s) => s.klanten * 1e4 + s.vul;
+  let titel, tekst;
+  if (rang(j) < rang(a)) { titel = '🏆 Je hebt de AI verslagen!'; tekst = j.klanten < a.klanten ? 'Minder klanten met lege handen dan met het bijvulplan van GramIQ.' : 'Even weinig klanten met lege handen als de AI, en dat met minder bijvulbeurten.'; }
+  else if (rang(j) === rang(a)) { titel = '🤝 Gelijkspel met de AI'; tekst = 'Even veel klanten met lege handen en even veel bijvulbeurten als het plan van GramIQ.'; }
+  else if (j.klanten === a.klanten) { titel = '😅 Bijna!'; tekst = `Even veel klanten geholpen als de AI, maar met ${j.vul - a.vul} bijvulbeurten meer. Dat kost personeelstijd.`; }
+  else if (j.klanten < z.klanten) { titel = '👍 Beter dan zonder GramIQ'; tekst = `Maar het plan van de AI deed het nog beter: ${a.klanten} tegenover jouw ${j.klanten} klanten die niet alles vonden.`; }
+  else { titel = '😬 Zware dag in de winkel'; tekst = 'Zonder GramIQ vonden evenveel of meer klanten alles. Let op de drukke uren rond 10–11u en 16–18u, en vul bij vóór een bak leeg is.'; }
+  if (S.blind) tekst += ' Je speelde blind, zonder weegschaal: precies het probleem dat GramIQ oplost.';
+  $('uitslag-merk').textContent = `Einde van de dag · ${S.dag.label}`;
+  $('uitslag-titel').textContent = titel;
+  $('uitslag-tekst').textContent = tekst;
+  const rijen = [['Klanten die niet alles vonden', (s) => s.klanten, 0], ['Gemiste verkoop (kg)', (s) => s.kg, 1],
+    ['Minuten met een lege bak', (s) => s.leegSec / 60, 0], ['Bijvulbeurten', (s) => s.vul, 0]];
+  $('uitslag-tabel').replaceChildren(...rijen.map(([label, f, dec]) => {
+    const rond = (x) => Math.round(x * 10 ** dec) / 10 ** dec, waarden = [j, a, z].map((s) => rond(f(s))), best = Math.min(...waarden);
+    const tr = maak('tr'), th = maak('th', '', label); th.scope = 'row'; tr.append(th);
+    waarden.forEach((x, i) => {
+      const td = maak('td', i === 0 ? 'jij' : '', (dec ? nl1 : nl0).format(x));
+      if (x === best) td.append(maak('span', 'beker', '🏆'));
+      tr.append(td);
+    });
+    return tr;
+  }));
+  const d = $('uitslag');
+  if (typeof d.showModal === 'function') d.showModal(); else d.setAttribute('open', '');
+}
+
 // ---------------------------------------------------------------- lus en bediening
 let vorige = 0, laatsteScherm = 0;
 function lus(nu) {
   const dt = Math.min(.1, (nu - vorige) / 1000 || 0); vorige = nu;
   if (S.speelt && !S.klaar) {
     S.simT = Math.min(DICHT, S.simT + dt * S.snelheid * 60);
-    while (S.stapT + STAP <= S.simT) { S.stapT += STAP; stap(S.met, S.stapT, S.dagData); stap(S.zonder, S.stapT, S.dagData); }
-    while (S.met.flits.length) { S.met.flits.pop(); flitsen.push({t0: nu}); }
+    while (S.stapT + STAP <= S.simT) { S.stapT += STAP; stap(S.met, S.stapT, S.dagData); stap(S.zonder, S.stapT, S.dagData); if (S.spel) stap(S.jij, S.stapT, S.dagData); }
+    while (S.met.flits.length) { S.met.flits.pop(); flitsen.push({t0: nu, w: 'met'}); }
     flitsen = flitsen.filter((f) => nu - f.t0 < 1400);
-    if (S.simT >= DICHT) { S.klaar = true; S.speelt = false; }
+    if (S.simT >= DICHT) { S.klaar = true; S.speelt = false; if (S.spel && !S.uitslag) { werkSchermBij(); toonUitslag(); } }
   }
   if (drieD) drieD.teken(nu); else tekenWinkel2D(nu);
   if (nu - laatsteScherm > 160) { laatsteScherm = nu; werkSchermBij(); tekenGrafiek(); tekenDagplan(); }
@@ -982,13 +1189,39 @@ function herstart(tot) { start($('dag').value, tot); flitsen = []; werkSchermBij
 DATA.dagen.forEach((d) => $('dag').append(new Option(`${d.label} · ${d.soort.toLowerCase()}`, d.id)));
 $('speel').addEventListener('click', () => { if (S.klaar) { S.ronde++; herstart(OPEN); S.speelt = true; } else S.speelt = !S.speelt; werkSchermBij(); });
 $('opnieuw').addEventListener('click', () => { S.ronde++; herstart(OPEN); S.speelt = true; werkSchermBij(); });
-$('dag').addEventListener('change', () => { herstart(OPEN + 3600); S.speelt = true; });
+$('dag').addEventListener('change', () => { herstart(S.spel ? OPEN : OPEN + 3600); S.speelt = true; });
+$('speel-zelf').addEventListener('click', startSpel);
+$('stop-spel').addEventListener('click', stopSpel);
+$('blind').addEventListener('change', (e) => { S.blind = e.target.value === '1'; werkSchermBij(); });
+$('uitslag').addEventListener('close', () => {
+  const keuze = $('uitslag').returnValue; $('uitslag').returnValue = '';
+  if (keuze === 'nog') startSpel();
+  else if (keuze === 'dag') { const s = $('dag'); s.selectedIndex = (s.selectedIndex + 1) % s.options.length; startSpel(); }
+  else if (keuze === 'stop') stopSpel();
+});
+$('deel').addEventListener('click', async () => {
+  const j = S.jij.score, a = S.met.score;
+  const tekst = `Ik speelde de GramIQ-winkel (${S.dag.label}): ${j.klanten} klanten vonden niet alles, met ${j.vul} bijvulbeurten. `
+    + `De AI: ${a.klanten} klanten en ${a.vul} beurten. Kun jij beter? ${location.href.split('#')[0]}`;
+  try { await navigator.clipboard.writeText(tekst); $('deel').textContent = 'Gekopieerd!'; }
+  catch { $('deel').textContent = 'Kopiëren lukt hier niet'; }
+  setTimeout(() => { $('deel').textContent = 'Kopieer je score'; }, 2200);
+});
+document.addEventListener('keydown', (e) => {
+  if (!S.spel || e.altKey || e.ctrlKey || e.metaKey || e.repeat) return;
+  if (e.target.closest && e.target.closest('input, select, textarea, dialog')) return;
+  const b = '1234'.indexOf(e.key);
+  if (b < 0) return;
+  e.preventDefault();
+  if (S.zicht !== 'jij') { S.zicht = 'jij'; $('wJij').checked = true; }
+  vulBij(b); kies(b);
+});
 $('snelheid').addEventListener('change', (e) => { S.snelheid = +e.target.value; });
 $('wereld').addEventListener('change', (e) => { S.zicht = e.target.value; werkSchermBij(); });
 cv.addEventListener('click', (ev) => {
   if (!L) return;
   const r = cv.getBoundingClientRect(), x = ev.clientX - r.left, y = ev.clientY - r.top;
-  L.bakken.forEach((c, b) => { if (Math.abs(x - c.x) < L.bw / 2 + 8 && y > c.y - L.bh / 2 - 40 && y < c.y + L.bh / 2 + 8) kies(b); });
+  L.bakken.forEach((c, b) => { if (Math.abs(x - c.x) < L.bw / 2 + 8 && y > c.y - L.bh / 2 - 40 && y < c.y + L.bh / 2 + 8) { if (S.spel && S.zicht === 'jij') vulBij(b); kies(b); } });
 });
 gv.addEventListener('pointermove', leesAf); gv.addEventListener('pointerdown', leesAf);
 dv.addEventListener('pointermove', leesDagAf); dv.addEventListener('pointerdown', leesDagAf);
@@ -1003,6 +1236,7 @@ catch (fout) {                                   // geen WebGL: toon de plattegr
   drieD = null; $('winkel3d').hidden = true; $('labels').hidden = true; cv.hidden = false;
   $('hint').textContent = 'Deze browser kan het 3D-beeld niet tonen; je ziet de plattegrond. Klik op een bak om die weegschaal te volgen.';
 }
+hintNormaal = $('hint').textContent;
 kies(0);
 werkSchermBij();
 requestAnimationFrame(lus);

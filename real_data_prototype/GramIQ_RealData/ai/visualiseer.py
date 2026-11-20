@@ -10,7 +10,6 @@ import argparse
 import os
 import sys
 
-import joblib
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
@@ -19,6 +18,7 @@ import pandas as pd  # noqa: E402
 
 HIER = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HIER)
+from draagbaar_model import laad_pakket  # noqa: E402
 from features import pas_marges_toe  # noqa: E402
 from weegschaal_model import PRODUCTEN  # noqa: E402
 
@@ -29,7 +29,7 @@ def main():
     ap.add_argument("--dag", default="2023-06-10")
     a = ap.parse_args()
 
-    model = joblib.load(os.path.join(HIER, "model_leeg.joblib"))
+    model, _ = laad_pakket("model_leeg", HIER)   # werkt met elke scikit-learn-versie
     df = pd.read_csv(os.path.join(HIER, "..", "data", "samples_echt.csv.gz"), parse_dates=["tijd"])
     df["bak_id"] = df.bak_id.astype(str).str.zfill(2)
     d = df[(df.bak_id == a.bak) & (df.tijd.dt.strftime("%Y-%m-%d") == a.dag)].copy()

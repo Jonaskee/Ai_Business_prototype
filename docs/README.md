@@ -5,8 +5,8 @@ Een 3D-winkel die een echte verkoopdag uit de dataset afspeelt, twee keer tegeli
 
 ## Openen
 
-**Online (na het aanzetten van GitHub Pages):**
-<https://boulezlouis.github.io/Ai_Business_prototype/>
+**Online:** <https://jonaskee.github.io/Ai_Business_prototype/>
+(staat ook op <https://boulezlouis.github.io/Ai_Business_prototype/> zodra Pages daar aanstaat, zie hieronder)
 
 **Lokaal:** clone de repo en dubbelklik op `docs/index.html`. Er is niets te installeren.
 Zonder internet werkt alles; alleen het lettertype valt dan terug op een standaardlettertype.
@@ -30,6 +30,20 @@ Zonder internet werkt alles; alleen het lettertype valt dan terug op een standaa
 
 Bovenaan kies je de dag (drukste dag van de testperiode, een gewone zaterdag of een rustige
 weekdag), de snelheid en welke winkel je ziet.
+
+## Het spel: jij bent de medewerker
+
+Klik op **🎮 Speel zelf**. Er komt een derde winkel bij met exact dezelfde klanten, maar daar vult
+niemand vanzelf bij: jij stuurt de medewerker. Klik op een bak in 3D, op een van de vier knoppen of
+druk <kbd>1</kbd>–<kbd>4</kbd>. De medewerker haalt een krat in het magazijn (1 tot 2,5 minuten) en vult
+de bak bij. Er is maar één medewerker: geef je een tweede opdracht, dan komt die erna.
+
+- **Met weegschalen**: je ziet gewicht, % vol en de voorspelling *leeg om …*, zoals met GramIQ.
+- **Blind**: je ziet enkel de winkel, zoals vandaag zonder GramIQ.
+
+Om 22u volgt de uitslag naast de AI en de winkel zonder GramIQ. Winnaar: de minste klanten die
+niet alles vonden; bij gelijkstand de minste bijvulbeurten. Met **Kopieer je score** daag je
+iemand anders uit.
 
 ## Wat is echt en wat is aangenomen
 

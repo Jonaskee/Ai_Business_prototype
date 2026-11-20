@@ -25,10 +25,8 @@ import json
 import os
 import sys
 
-import joblib
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import HistGradientBoostingRegressor
 
 HIER = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HIER)
@@ -96,6 +94,9 @@ def bouw_features() -> pd.DataFrame:
 
 
 def maak_model(loss, **kw):
+    # scikit-learn pas hier importeren: de backend gebruikt dit bestand enkel voor bouw_features()
+    # en bestel_kg(), en heeft zo geen scikit-learn nodig (zie draagbaar_model.py)
+    from sklearn.ensemble import HistGradientBoostingRegressor
     return HistGradientBoostingRegressor(
         loss=loss, max_iter=500, learning_rate=0.04, max_leaf_nodes=31, min_samples_leaf=40,
         l2_regularization=1.0, categorical_features=[BESTEL_FEATURES.index("categorie_code")],
@@ -124,6 +125,7 @@ def evalueer(df, med, q80):
 
 
 def main():
+    import joblib
     print("Features bouwen ...")
     df = bouw_features()
     # doel: dagen waarop het product verkocht werd en er al wat geschiedenis is
@@ -162,7 +164,10 @@ def main():
     joblib.dump(pakket, os.path.join(HIER, "model_bestelling.joblib"), compress=3)
     with open(os.path.join(HIER, "bestel_rapport.json"), "w") as f:
         json.dump(rapport, f, indent=2, ensure_ascii=False)
-    print("Opgeslagen: ai/model_bestelling.joblib en ai/bestel_rapport.json")
+    # draagbare kopie: laadt met elke scikit-learn-versie (zie draagbaar_model.py)
+    from draagbaar_model import schrijf_json
+    schrijf_json(pakket, os.path.join(HIER, "model_bestelling.joblib"))
+    print("Opgeslagen: ai/model_bestelling.joblib, ai/model_bestelling.json en ai/bestel_rapport.json")
 
 
 if __name__ == "__main__":

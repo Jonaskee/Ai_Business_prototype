@@ -4,3 +4,103 @@ body {
   background-color: #f4f7f6;
   color: #333;
 }
+
+.pagina { padding: 40px; box-sizing: border-box; }
+@media (max-width: 640px) { .pagina { padding: 20px 16px; } }
+
+/* ------------------------------------------------------------ statusbalk en tabs */
+.statusbalk { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 14px 0 0; font-size: 0.85rem; color: #555; }
+.statusbalk span { display: inline-flex; align-items: center; gap: 6px; }
+.stip { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.stip.groen { background: #27ae60; box-shadow: 0 0 0 3px rgba(39, 174, 96, .18); animation: puls 2s infinite; }
+.stip.rood { background: #e74c3c; }
+@keyframes puls { 50% { box-shadow: 0 0 0 6px rgba(39, 174, 96, 0); } }
+@media (prefers-reduced-motion: reduce) { .stip.groen { animation: none; } }
+
+.tabs { display: flex; gap: 4px; margin-top: 18px; overflow-x: auto; }
+.tabs a { padding: 10px 16px; border-radius: 8px 8px 0 0; color: #7f8c8d; text-decoration: none; font-weight: 600; white-space: nowrap; border-bottom: 3px solid transparent; }
+.tabs a:hover { color: #2c3e50; background: rgba(0, 0, 0, .03); }
+.tabs a[aria-current="page"] { color: #2c3e50; border-bottom-color: #2980b9; background: #fff; }
+
+/* ------------------------------------------------------------ AI-lab */
+.lab { display: flex; flex-direction: column; gap: 24px; }
+.lab-intro h2 { margin: 0 0 6px; color: #2c3e50; }
+.lab-intro p { margin: 0; color: #7f8c8d; max-width: 70ch; }
+
+.lab-kaart { background: #fff; border-radius: 12px; padding: 26px; box-shadow: 0 4px 6px rgba(0, 0, 0, .08); }
+.lab-kaart h2 { margin: 0 0 6px; color: #2c3e50; font-size: 1.3rem; }
+.lab-kaart-kop { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 14px 24px; margin-bottom: 20px; }
+.lab-kaart-kop p { margin: 0; color: #7f8c8d; max-width: 62ch; font-size: .95rem; }
+
+.lab-knoppen { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; }
+.lab-knop { font: inherit; font-size: .88rem; padding: 7px 12px; border-radius: 8px; border: 1px solid #dfe6e9; background: #fff; color: #2c3e50; cursor: pointer; }
+.lab-knop:hover:not(:disabled) { border-color: #2980b9; color: #2980b9; }
+.lab-knop.accent { background: #2980b9; border-color: #2980b9; color: #fff; }
+.lab-knop.accent:hover:not(:disabled) { background: #2471a3; color: #fff; }
+.lab-knop:disabled { opacity: .5; cursor: default; }
+.lab-knop:focus-visible, .lab-segment button:focus-visible, .lab input:focus-visible, .lab select:focus-visible, .tabs a:focus-visible { outline: 2px solid #2980b9; outline-offset: 2px; }
+
+.lab-raster { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 28px; align-items: start; }
+@media (max-width: 900px) { .lab-raster { grid-template-columns: minmax(0, 1fr); } }
+
+.lab-invoer { display: flex; flex-direction: column; gap: 18px; }
+.lab-veld-kop { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 7px; font-size: .92rem; color: #555; }
+.lab-veld-kop strong { color: #2c3e50; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+.lab-uitleg { font-size: .8rem; color: #95a5a6; margin-top: 5px; }
+.lab input[type="range"] { width: 100%; accent-color: #2980b9; margin: 0; }
+.lab-bak { height: 14px; border-radius: 7px; background: #ecf0f1; overflow: hidden; margin-bottom: 8px; }
+.lab-bak i { display: block; height: 100%; border-radius: 7px; transition: width .2s, background .3s; }
+
+.lab-segment { display: grid; gap: 6px; }
+.lab-segment.vier { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.lab-segment.zeven { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.lab-segment button { font: inherit; font-size: .88rem; padding: 8px 6px; border-radius: 8px; border: 1px solid #dfe6e9; background: #fff; color: #2c3e50; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.lab-segment button[aria-pressed="true"] { background: #2c3e50; border-color: #2c3e50; color: #fff; }
+.lab-emoji { font-size: 1.15rem; }
+.lab-tijd, .lab select, .lab input[type="date"] { font: inherit; padding: 7px 10px; border-radius: 8px; border: 1px solid #dfe6e9; background: #fff; color: #2c3e50; }
+
+.lab-uitvoer, .lab-bestel-uitvoer { display: flex; flex-direction: column; gap: 16px; transition: opacity .15s; min-width: 0; }
+.lab-uitvoer.bezig, .lab-bestel-uitvoer.bezig { opacity: .65; }
+.lab-resultaat { border: 2px solid #27ae60; border-radius: 12px; padding: 18px 20px; background: #fbfcfc; }
+.lab-resultaat-kop { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; font-size: .85rem; color: #7f8c8d; }
+.lab-pil { font-size: .78rem; font-weight: 700; padding: 2px 9px; border: 1.5px solid; border-radius: 999px; white-space: nowrap; }
+.lab-groot { font-size: 2.2rem; font-weight: 800; line-height: 1.15; margin: 8px 0 4px; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.lab-groot.klein { font-size: 1.8rem; color: #2c3e50; margin: 2px 0 0; }
+.lab-sub { color: #555; }
+.lab-dim { color: #95a5a6; font-size: .85rem; }
+.lab-vergelijk { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; }
+.lab-vergelijk-rij { display: grid; grid-template-columns: 52px minmax(0, 1fr) 70px; gap: 10px; align-items: center; font-size: .88rem; color: #555; }
+.lab-vergelijk-rij strong { text-align: right; color: #2c3e50; font-variant-numeric: tabular-nums; }
+.lab-meter { height: 10px; background: #ecf0f1; border-radius: 5px; overflow: hidden; }
+.lab-meter i { display: block; height: 100%; border-radius: 5px; transition: width .3s; }
+
+.lab-grafiek { min-width: 0; }
+.lab-grafiek-titel { font-size: .85rem; color: #7f8c8d; margin-bottom: 4px; }
+.lab-details { border-top: 1px solid #ecf0f1; padding-top: 10px; }
+.lab-details summary { cursor: pointer; font-weight: 600; color: #2c3e50; }
+.lab-details dl { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 16px; margin: 12px 0 4px; font-size: .9rem; }
+.lab-details dt { color: #7f8c8d; }
+.lab-details dd { margin: 0; text-align: right; font-weight: 600; color: #2c3e50; font-variant-numeric: tabular-nums; }
+.lab-voet { margin: 4px 0 0; font-size: .82rem; color: #7f8c8d; }
+.lab-fout { padding: 12px 14px; border-radius: 8px; background: #fdecea; color: #c0392b; }
+.lab-leeg { padding: 30px; text-align: center; color: #95a5a6; }
+
+.lab-bestel-invoer { display: flex; flex-wrap: wrap; gap: 14px 20px; align-items: flex-end; margin-bottom: 20px; }
+.lab-label { display: flex; flex-direction: column; gap: 6px; font-size: .88rem; color: #555; min-width: 0; }
+.lab-label select { max-width: min(100%, 360px); }
+.lab-datum { display: flex; gap: 6px; align-items: center; }
+.lab-badge { padding: 9px 14px; border-radius: 8px; font-size: .9rem; font-weight: 600; }
+.lab-badge.test { background: #e8f6ef; color: #1e8449; }
+.lab-badge.train { background: #fef5e7; color: #9a6400; }
+.lab-tegels { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.lab-tegel { border: 1px solid #ecf0f1; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+.lab-tegel span { font-size: .82rem; color: #7f8c8d; }
+.lab-tegel strong { font-size: 1.45rem; color: #2c3e50; font-variant-numeric: tabular-nums; }
+.lab-tegel small { color: #95a5a6; font-size: .76rem; }
+.lab-tegel.accent { border-color: #2980b9; background: #f4f9fd; }
+.lab-tegel.accent strong { color: #2980b9; }
+.lab-realiteit { display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr); gap: 16px 24px; align-items: center; padding: 16px 18px; border-radius: 10px; background: #f8f9fa; }
+@media (max-width: 700px) { .lab-realiteit { grid-template-columns: minmax(0, 1fr); } }
+.lab-oordeel { font-size: .95rem; color: #2c3e50; display: flex; flex-direction: column; gap: 4px; }
+.lab-oordeel.goed strong { color: #1e8449; }
+.lab-oordeel.tekort strong { color: #c0392b; }

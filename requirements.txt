@@ -1,0 +1,11 @@
+# Wat het GramIQ-prototype nodig heeft om te draaien (Python 3.10 of nieuwer).
+# start.py installeert dit automatisch in .venv; zelf doen kan met: pip install -r requirements.txt
+#
+# scikit-learn staat hier bewust niet bij: de backend gebruikt de draagbare modellen
+# (ai/model_leeg.json en ai/model_bestelling.json) die enkel numpy nodig hebben.
+# Opnieuw trainen? pip install -r real_data_prototype/GramIQ_RealData/ai/requirements.txt
+numpy>=1.26,<3
+pandas>=2.1,<4
+fastapi>=0.110
+uvicorn>=0.27
+paho-mqtt>=1.6,<2     # versie 2 heeft een andere API
